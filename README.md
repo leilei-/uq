@@ -14,3 +14,4 @@
 - Restore all monsters
 - Add bots, because let's face it, there ain't going to be anyone willing to play this with you. :(
 - Try to manage/refactor some of the effect fluff, like the excessive spawning of bubbles and the flying flames
+- Recreate the changes in V5 Beta 5 as the QC code to that has not been released. :(
