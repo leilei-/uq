@@ -619,7 +619,9 @@ void() PutClientInServer =
       self.phase = 1;
 	self.climbing=FALSE;
         self.dangle=FALSE;
-
+#ifdef CLASS_RANDOM_TIME
+	self.classpick_time = CLASS_RANDOM_TIME;
+#endif
 	DecodeLevelParms ();
 	
 	W_SetCurrentAmmo ();
@@ -1245,6 +1247,7 @@ PlayerPreThink
 Called every frame before physics are run
 ================
 */
+.float ampressed;
 void() PlayerPreThink =
 {
 	local	float	mspeed, aspeed;
@@ -1259,6 +1262,62 @@ void() PlayerPreThink =
 	if (self.view_ofs == '0 0 0')
 		return;		// intermission or finale
 
+#ifdef KEYVENIENCE
+	// leilei - keyvenience - hijack a couple of keys to get in the game for the unbounded
+
+	if (!self.allset){
+	if (!self.ampressed){	
+		if (self.button2 || (self.impulse == 10)){ // +jump or cycle next weapon
+			self.impulse = 140; // next	
+			self.ampressed = 1;
+			}
+		if ((self.impulse == 12)){ // cycle prev weapon
+			self.impulse = 142; // prev
+			self.ampressed = 1;
+			}
+	else if (self.button0) // +attack
+			{
+			self.impulse = 52; // confirm
+			self.ampressed = 1;
+			}
+		}
+
+
+	
+	}
+	if ((!self.button2) && (!self.button0))
+	self.ampressed = 0;	// reset button state
+
+#endif
+
+
+#ifdef	CLASS_RANDOM_TIME
+
+
+	if (!self.allset){
+
+		if (self.classpick_time < (time + 5))
+		sprint(self,"You can't just sit there! \n\nPicking in 5 seconds...");
+
+		if (self.classpick_time < time){
+
+		sprint(self,"AUTOPICKED!!!");
+			if (!self.race){
+			self.race = random() * 9 + 1;
+				self.classpick_time = CLASS_RANDOM_TIME;
+				selectrace();
+				}
+			if (!self.class){
+			self.class = random() * 7 + 1;
+				self.classpick_time = CLASS_RANDOM_TIME;
+				selectclass();
+				}
+
+			}
+		
+	}
+
+#endif
         if(self.skin==15&&self.allset)
                 if(random()<=0.5&&pointcontents(self.origin)!=CONTENT_SOLID)
                         self.solid=SOLID_NOT;

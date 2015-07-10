@@ -954,3 +954,17 @@ void(entity winner) BorgShield;
 void(float fromchange) Batleth;
 void(float fromchange) Lsword;
 void(entity loser) Woof;
+
+
+
+
+
+
+
+
+
+
+
+//leilei
+
+.float		classpick_time;	// time we need to check for picking a class

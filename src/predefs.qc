@@ -13,3 +13,15 @@
 
 
 #define		JAWORSKI			1		// Enables the stuff Jaworski says on occasions.
+
+
+#define		CLASS_RANDOM_TIME		6		// Seconds until the player is given a random character (bot debug)
+
+
+
+#define		KEYVENIENCE					// Changes some keys to some important ones on the fly. Like attack, 1 and 2 in the class/race picking process
+
+
+
+
+

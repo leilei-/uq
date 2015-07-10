@@ -836,6 +836,9 @@ entity () HomeFindTarget =
         }
 
         self.allset=TRUE;
+#ifdef CLASS_RANDOM_TIME
+	self.classpick_time = 0; // leilei - don't do the timer again
+#endif
         if (selected != world)   
         {
                 sprint (self.owner,"Homing->");
@@ -3016,7 +3019,12 @@ void() W_Attack =
 
         if(self.allset==FALSE||self.skin>24)
                 {
-                sprint(self,"Can't attack, either frozen or haven't chosen race/class/skin\n");
+               
+#ifdef KEYVENIENCE
+		self.impulse = 52; // leilei - pick!!!
+#else
+		sprint(self,"Can't attack, either frozen or haven't chosen race/class/skin\n");
+#endif
                 return;
                 }
         
@@ -4200,7 +4208,9 @@ local float itemkeep;
 local entity head;
         sprint(self,"Race and Class reset...\n");
         self.allset=FALSE;
-
+#ifdef CLASS_RANDOM_TIME
+	self.classpick_time = time + CLASS_RANDOM_TIME; // leilei - push this timer
+#endif
         if(deathmatch)
                 self.exp=0;
         else self.exp=self.exp/2;
