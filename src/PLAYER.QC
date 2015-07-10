@@ -249,13 +249,13 @@ void()	player_stand1 =[	$axstnd1,	player_stand1	]
                         return;
 	}
 
-/*
+#ifdef JAWORSKI
         if(self.enemy.health>0&&self.enemy.skin==1&&self.enemy.classname=="player"&&random()<0.2&&random()<0.2&&random()<0.2&&random()<0.2&&self.enemy.zap_finished<=time)
                         {
                         self.enemy.zap_finished=time+1;
                         sound (self.enemy, CHAN_VOICE, "jaworski/comeon.wav", 1, ATTN_NORM);
                         }
-*/
+#endif
         if (self.dog_time)
         {
         // We are a dog
@@ -800,7 +800,7 @@ local float		rs;
                 sound (self, CHAN_VOICE, "tiger/die.wav", 1, ATTN_NONE);
 		return;
         }
-/*
+#ifdef JAWORSKI
         else if(self.skin==1||self.oldskin==1)
         {
                 if(self.health<-25||random()<0.2)
@@ -812,7 +812,7 @@ local float		rs;
                 else sound (self, CHAN_VOICE, "jaworski/fuckthis.wav", 1, ATTN_NONE);
 		return;
         }
-*/
+#endif
         else if(self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
         {
                 if(self.waterlevel==3)
@@ -1357,13 +1357,13 @@ void()  player_sstand1 =[        $saxstnd1,       player_sstand1   ]
                         player_srun();
                         return;
 	}
-/*
+#ifdef JAWORSKI
         if(self.enemy.health>0&&self.enemy.skin==1&&self.enemy.classname=="player"&&random()<0.2&&random()<0.2&&random()<0.2&&random()<0.2&&self.enemy.zap_finished<=time)
                         {
                         self.enemy.zap_finished=time+1;
                         sound (self.enemy, CHAN_VOICE, "jaworski/comeon.wav", 1, ATTN_NORM);
                         }
-*/
+#endif
         if (self.weapon == IT_AXE)
 	{
 		if (self.walkframe >= 12)

@@ -179,7 +179,7 @@ else
         precache_sound ("tiger/hurt2.wav");   
         precache_sound ("tiger/hurt3.wav"); 
         precache_sound ("tiger/attack.wav"); 
-/*
+#ifdef JAWORSKI
         precache_sound ("jaworski/terlet.wav");
         precache_sound ("jaworski/piss.wav");    
         precache_sound ("jaworski/ow1.wav");  
@@ -199,7 +199,7 @@ else
         precache_sound ("jaworski/oo-uh.wav"); 
         precache_sound ("jaworski/jump.wav"); 
         precache_sound ("jaworski/land.wav"); 
-*/
+#endif
         precache_model ("progs/v_uzi.mdl");
         precache_model ("progs/v_six.mdl");
         precache_sound ("weapons/gbugun.wav");
@@ -841,13 +841,13 @@ entity () HomeFindTarget =
                 sprint (self.owner,"Homing->");
                 if (selected.classname == "player"||selected.classname=="holo")
                 {
-/*
+#ifdef JAWORSKI
                         if(selected.skin==1&&selected.zap_finished<time)
                                 {
                                 sound (selected, CHAN_VOICE, "jaworski/ohshit.wav",1, ATTN_NORM);
                                 selected.zap_finished = time + 1;
                                 }
-*/
+#endif
                         sprint (self.owner,selected.netname);
                         sprint(selected,"Warning!  ");
                         if(self.classname == "disc")
@@ -2383,10 +2383,10 @@ void() PipeBombTouch =
 			sprint (self.owner, "You have tagged ");
                         if (self.controller.classname == "player")
 			{
-/*
+#ifdef JAWORSKI
                                 if(self.controller.skin==1)
                                         JaworskiHurt(self.controller);
-*/
+#endif
                                 sprint (self.owner, self.controller.netname);
 				sprint (self.owner, "!\n");
 			
@@ -3033,19 +3033,25 @@ void() W_Attack =
         if((self.weapon==IT_SWORD&&self.sword.running&&!self.sword.inpain)||
            (self.weapon==IT_BATLETH&&self.batleth.running&&!self.batleth.inpain))
                 {
-                sprint(self,"Your longsword or batleth is in your hand...\n");
+#ifdef FLOODY_TEXT
+                sprint(self,"Your longsword or batleth is in your hand...\n"); // leilei - don't flood this. 
+#endif
                 return;
                 }
 
         if(self.weapon==IT_SABER&&self.saber.classname=="lightsaber"&&!self.saber.inpain&&self.saber.running)// If not in hand or not on ground, can't fire here.
                 {
-                sprint(self,"You're using your lightsaber...\n");
+#ifdef FLOODY_TEXT
+                sprint(self,"You're using your lightsaber...\n");	
+#endif
                 return;
                 }
         
         if(self.weapon==IT_DISC&&self.saber.classname=="disc"&&self.saber.running&&(self.saber.aflag||self.saber.inpain))
                 {
-                sprint(self,"Your disc in is in the air...\n");
+#ifdef FLOODY_TEXT
+                sprint(self,"Your disc in is in the air...\n");       
+#endif
                 return;
                 }
 
@@ -3329,7 +3335,11 @@ void() W_Attack =
                         self.feigning = 0;
                         self.attack_finished = time + 2 - self.attackspeed;
                         }
+#ifdef FAST_RAPIDROCK	
                 else self.attack_finished = time + 0.1 - self.attackspeed;
+#else
+                else self.attack_finished = time + 0.5 - self.attackspeed;
+#endif
         }
         else if (self.weapon == IT_SPREAD_LAUNCHER)
 	{
@@ -3869,6 +3879,7 @@ void() CheatCommand =
                 IT_FREEZEGUN |
                 IT_LIGHTNING;
                 IT_KEY1 | IT_KEY2;
+	self.items2 |= IT_GHOOK; // leilei - cheat a grapple.
 //        self.weapon = IT_ROCKET_LAUNCHER;
 	self.impulse = 0;
         self.exp = 1000000;

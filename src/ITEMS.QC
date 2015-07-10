@@ -564,12 +564,12 @@ void() weapon_touch =
 	sprint (other, "\n");
 // weapon touch sound
         sound (other, CHAN_ITEM, "weapons/pkup.wav",other.volume + 1, ATTN_NORM);
-/*
+#ifdef JAWORSKI
         if(other.skin==1&&random()<0.2&&random()<0.2)
                 if(random()<0.5)
                         sound (other, CHAN_VOICE, "jaworski/whoohoo.wav",1, ATTN_NORM);
                 else sound (other, CHAN_VOICE, "jaworski/yes.wav",1, ATTN_NORM);
-*/
+#endif
 	stuffcmd (other, "bf\n");
 
 	bound_other_ammo ();

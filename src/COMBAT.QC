@@ -374,7 +374,8 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 
         if ((teamplay == 1) && (targ.team > 0)&&(targ.team == attacker.team))
 		return;
-/*        if(take>targ.health*0.25&&targ.skin==1&&targ.classname=="player")
+#ifdef JAWORSKI
+        if(take>targ.health*0.25&&targ.skin==1&&targ.classname=="player")
                         {
                         sound (targ, CHAN_VOICE, "jaworski/bastard.wav", 1, ATTN_NORM);
                         targ.zap_finished=time+1;
@@ -384,7 +385,7 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
                         sound (attacker, CHAN_VOICE, "jaworski/yes.wav", 1, ATTN_NORM);
                         attacker.zap_finished=time+0.5;
                         }
-*/
+#endif
         targ.health = targ.health - take;
 	if(take>100)
 		r=6;

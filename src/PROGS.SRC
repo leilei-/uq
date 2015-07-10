@@ -1,4 +1,6 @@
-progs.dat
+..\progs.dat
+
+predefs.qc		// leilei - configure mod here
 defs.qc
 subs.qc
 fight.qc

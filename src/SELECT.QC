@@ -72,11 +72,14 @@ void() showskin =
 if(self.skin==0)
         centerprint(self,"Mike Gummelt\n");
 else if(self.skin==1)
-//        {
+        {
         centerprint(self,"Mike Jaworski\n");
-//        if(self.skinset)
-//                sound (self, CHAN_VOICE, "jaworski/whoohoo.wav",1, ATTN_NORM);
-//        }
+#ifdef JAWORSKI
+        if(self.skinset)
+                sound (self, CHAN_VOICE, "jaworski/whoohoo.wav",1, ATTN_NORM);
+
+#endif
+        }
 else if(self.skin==2)
         centerprint(self,"Draconian\n");
 else if(self.skin==3)
@@ -1326,7 +1329,7 @@ sprint(self,"Weakness:\n");
                 sprint(self,"...is extremely vulnerable to fire!\n");
 };
 
-/*
+#ifdef JAWORSKI
 void(entity speaker) JaworskiHurt =
 {
 local float rs;
@@ -1355,7 +1358,7 @@ local float rs;
         self.ow_finished=time + 0.5;
         }
 };
-*/
+#endif
 
 void(vector dir) Trace =
 {

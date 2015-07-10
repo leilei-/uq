@@ -1006,13 +1006,13 @@ local float jumpdist;
                 {
                 if(self.racename=="TigerMan")
                         sound (self, CHAN_BODY, "tiger/hurt1.wav",self.volume + 1, ATTN_NORM);
-/*Jman
+#ifdef JAWORSKI
                 else if(self.skin==1||self.oldskin==1)
                         {
                         if(self.zap_finished<=time)
                                 sound (self, CHAN_BODY, "jaworski/jump.wav", 1, ATTN_NORM);
                         }
-*/
+#endif
                 else if(self.racename!="Predator")
                         if(self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
                         {
@@ -1800,7 +1800,7 @@ void() PlayerPostThink =
 
 	W_WeaponFrame ();
 
-/*
+#ifdef JAWORSKI
         if((self.skin==1||self.oldskin==1)&&self.zap_finished<=time)
                 if(random()<0.2&&random()<0.2&&random()<0.2&&random()<0.2&&random()<0.2)
                         {
@@ -1809,7 +1809,7 @@ void() PlayerPostThink =
                         else sound (self, CHAN_VOICE, "jaworski/terlet.wav", 1, ATTN_NORM);
                         self.zap_finished=time+1;
                         }
-*/
+#endif
 // check to see if player landed and play landing sound
 if(self.flags & FL_ONGROUND&&self.classlabel!="Jedi"&&self.classlabel!="Dark Jedi")
 {
@@ -1831,7 +1831,7 @@ self.scream=FALSE;
 			self.deathtype = "falling";
                         T_Damage (self, world, world,0-((self.jump_flag/4 + 75)*self.mass)); //do minimum 25 damage, multiplied by your mass
                         }
-/*
+#ifdef JAWORSKI
                         if(self.skin==1||self.oldskin==1)
                         {
                                 if(random()<0.5)
@@ -1839,7 +1839,7 @@ self.scream=FALSE;
                                 else sound (self, CHAN_VOICE, "jaworski/oo-uh.wav", 1, ATTN_NORM);
                         }
                         else 
-*/
+#endif
 				if (self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
                                 sound (self, CHAN_VOICE, "xena/land2.wav", 1, ATTN_NORM);
                         else sound (self, CHAN_VOICE, "player/land2.wav",self.volume + 1, ATTN_NORM);
@@ -1851,10 +1851,11 @@ self.scream=FALSE;
 			self.deathtype = "falling";
                         T_Damage (self, world, world,0-((self.jump_flag/10 + 25)*self.mass)); //do minimum 5 damage, multiplied by your mass
                         }
-/*
+#ifdef JAWORSKI
                         if(self.skin==1||self.oldskin==1)
                                 sound (self, CHAN_VOICE, "jaworski/land.wav", 1, ATTN_NORM);
-                        else */
+                        else 
+#endif
 				if (self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
                                 sound (self, CHAN_VOICE, "xena/land.wav", 1, ATTN_NORM);
                         else sound (self, CHAN_VOICE, "player/land.wav",self.volume + 1, ATTN_NORM);

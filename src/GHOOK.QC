@@ -45,7 +45,9 @@ local float numlinks;
                 link=find(lastlink,netname,"link");
                 if(link.owner==self.owner)
                 {
+#ifdef FLOODY_TEXT
                         bprint("found a link\n");
+#endif
                         if(link.classname=="lastlink")
                                 link.hover=FALSE;
                         link.enemy=other;
@@ -98,7 +100,9 @@ void () LinkThink =
                                 link=find(lastlink,netname,"link");
                                 if(link.owner==self.owner)
                                 {
+#ifdef FLOODY_TEXT
                                 bprint("found a link\n");
+#endif
                                 link.enemy=self.enemy;
                                 link.movetype=MOVETYPE_FLY;
                                 link.solid=SOLID_BBOX;
@@ -187,7 +191,9 @@ void() Retract =
 {
 local vector dir;
 local float dist;
+#ifdef FLOODY_TEXT
         bprint("retracting\n");
+#endif
         if(self.movetype!=MOVETYPE_BOUNCE)
                 self.movetype=MOVETYPE_BOUNCE;
         makevectors (self.owner.angles);
@@ -249,7 +255,9 @@ void() GhookDrop =
 {
 local float dist;
 local vector dir;
+#ifdef FLOODY_TEXT
         bprint("Dropped\n");
+#endif
         if(vlen(self.origin-self.owner.origin)<36&&self.owner!=self)
                 DeactivateGhook();
         self.owner.ghook_dropped=TRUE;
@@ -298,6 +306,7 @@ void() HoldThink =
                 self.enemy.v_angle=self.o_angle;
         if(self.owner!=self&&(!self.owner.alive||!self.owner.ghook_holdon||!self.enemy.alive))
                 self.think=GhookDrop;
+#ifdef GRAPPLE_STUN
         else self.think=HoldThink;
         if(random()<0.2&&random()<0.2)
         {
@@ -347,6 +356,12 @@ void() HoldThink =
                 self.enemy.velocity='0 0 0';
 
         self.nextthink=time;
+#else
+	else self.think=GhookDrop;	// leilei - TODO properly drop this and don't stun.
+
+
+#endif
+
 };
 
 void(entity bound) Grab=
