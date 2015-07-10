@@ -1,4 +1,4 @@
-../progs.dat
+progs.dat
 defs.qc
 subs.qc
 fight.qc
@@ -6,7 +6,19 @@ ai.qc
 combat.qc
 items.qc
 shells.qc
+chakram.qc
+saber.qc
+sword.qc
+batleth.qc
+select.qc
+climb.qc
+lazsight.qc
+betty.qc
+sentinel.qc
+ghook.qc
 weapons.qc
+disc.qc
+tripmine.qc
 world.qc
 client.qc
 holo2.qc
@@ -19,22 +31,25 @@ buttons.qc
 triggers.qc
 plats.qc
 misc.qc
-magic.qc
-flame.qc
+firefly.qc
 
 ogre.qc
 demon.qc
-dog.qc
 shambler.qc
 knight.qc
 soldier.qc
 wizard.qc
 zombie.qc
 hknight.qc              // registered
-shalrath.qc		// registered
+shalrath.qc             // registered
 enforcer.qc             // registered
+dog.qc
 
-//boss.qc
-//oldone.qc               // registered 
-//fish.qc                 // registered
-//tarbaby.qc              // registered
+magic.qc
+teleeyes.qc
+flame.qc
+
+boss.qc
+oldone.qc               // registered 
+fish.qc                 // registered
+tarbaby.qc              // registered

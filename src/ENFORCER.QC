@@ -41,6 +41,7 @@ $frame paind17 paind18 paind19
 void() Laser_Touch =
 {
         local vector org;
+	local float lazdam;
 	
 	if (other == self.owner)
 		return;		// don't explode on owner
@@ -50,58 +51,77 @@ void() Laser_Touch =
 		remove(self);
 		return;
 	}
-	
+	else if (pointcontents(self.origin) != CONTENT_EMPTY&&pointcontents(self.origin) != CONTENT_SOLID)
+	{
+		lazdam = 0.5;
+	}
+	else lazdam = 1;
+
+	if(self.owner.classname=="sentinel")
+	{
+		self.controller=self.owner;
+		self.owner=self.owner.controller;
+	}
+
         if (other.reflecttime > time)
               {
                 BounceBack(self.owner,other);
                 return;
               }
 
-	sound (self, CHAN_WEAPON, "enforcer/enfstop.wav", 1, ATTN_STATIC);
+        if(self.small)
+                sound (self, CHAN_WEAPON, "enforcer/enfstop.wav", 0.25, ATTN_STATIC);
+        else sound (self, CHAN_WEAPON, "enforcer/enfstop.wav", 1, ATTN_STATIC);
 	org = self.origin - 8*normalize(self.velocity);
 
-	if (other.health)
+      if((other.phase==self.owner.phase&&other.racename=="Borg")||!other.health)
 	{
-		SpawnBlood (org, self.velocity*0.2, 15);
-        if (self.owner.classname == "player")
-        T_Damage (other, self, self.owner, 30);   //SHYFT MOD for player dmg
-        else
-        T_Damage (other, self, self.owner, 15);
-
-	}
-	else
-	{
+		if(other.phase==self.owner.phase&&other.racename=="Borg")
+			BorgShield(other);
 		WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
 		WriteByte (MSG_BROADCAST, TE_GUNSHOT);
 		WriteCoord (MSG_BROADCAST, org_x);
 		WriteCoord (MSG_BROADCAST, org_y);
 		WriteCoord (MSG_BROADCAST, org_z);
 	}
-	
+      else
+      {
+        SpawnBlood (org, self.velocity*0.2, 15,other);
+        if(other.energyabsorb&&self.netname!="heat")
+                {
+                stuffcmd (other, "bf\n");
+                other.health=other.health + 30;
+                if(other.health>other.max_health*2)
+                        other.health=other.max_health*2;
+                }
+        else if(self.netname=="force")
+                        {
+                        other.velocity=other.velocity+(self.velocity*0.5)+'0 0 100';
+                        if(other.flags&FL_ONGROUND)
+                                other.flags=other.flags-FL_ONGROUND;
+                        if(other.flags&FL_FLY)
+                                other.flags=other.flags-FL_FLY;
+                        if(other.flags&FL_SWIM)
+                                other.flags = other.flags - FL_SWIM;
+                        T_Damage (other, self, self.owner, 5);
+                        }
+        else if (self.owner.classname == "player")
+                T_Damage (other, self, self.owner, 30*lazdam);
+        else
+                T_Damage (other, self, self.owner, 15*lazdam);
+      }
 	remove(self);	
 };
 
-void(vector org, vector vec) LaunchLaser =
-{
-	local	vector	vec;
-        if (self.classname == "enforcer")
-		sound (self, CHAN_WEAPON, "enforcer/enfire.wav", 1, ATTN_NORM);
-	vec = normalize(vec);
-        PLaser(vec,self); 
-};
-
-
-
 void() enforcer_fire =
 {
-	local vector org;
+        local vector vec;
 
 	self.effects = self.effects | EF_MUZZLEFLASH;
-	makevectors (self.angles);
-	
-	org = self.origin + v_forward * 30 + v_right * 8.5 + '0 0 16';
-
-	LaunchLaser(org, self.enemy.origin - self.origin);
+        makevectors(self.angles);
+        vec=normalize((self.enemy.origin - v_right*4) - self.origin);
+        LaserSound();
+        PLaser(vec,self); 
 };
 
 //============================================================================
@@ -116,7 +136,13 @@ void()	enf_stand7	=[	$stand7,	enf_stand1	] {ai_stand();};
 
 void()	enf_walk1	=[	$walk1 ,	enf_walk2	] {
 if (random() < 0.2)
-	sound (self, CHAN_VOICE, "enforcer/idle1.wav", 1, ATTN_IDLE);
+        if(self.classname!="Borg")
+                sound (self, CHAN_VOICE, "enforcer/idle1.wav", 1, ATTN_IDLE);
+        else if(random()<0.1)
+                if(self.enemy!=self.controller)                
+                        BorgSpeak(self);
+                else if(random()<0.1)
+                        sound(self,CHAN_VOICE,"borg/werborg.wav",1,ATTN_NONE);
 ai_walk(2);
 };
 void()	enf_walk2	=[	$walk2 ,	enf_walk3	] {ai_walk(4);};
@@ -136,8 +162,15 @@ void()	enf_walk15	=[	$walk15,	enf_walk16	] {ai_walk(4);};
 void()	enf_walk16	=[	$walk16,	enf_walk1	] {ai_walk(2);};
 
 void()	enf_run1	=[	$run1  ,	enf_run2	] {
+
 if (random() < 0.2)
-	sound (self, CHAN_VOICE, "enforcer/idle1.wav", 1, ATTN_IDLE);
+        if(self.classname!="Borg")
+                sound (self, CHAN_VOICE, "enforcer/idle1.wav", 1, ATTN_IDLE);
+        else if(random()<0.1)
+                if(self.enemy!=self.controller)                
+                        BorgSpeak(self);
+                else if(random()<0.2)
+                        sound(self,CHAN_VOICE,"borg/werborg.wav",1,ATTN_NONE);
 ai_run(18);};
 void()	enf_run2	=[	$run2  ,	enf_run3	] {ai_run(14);};
 void()	enf_run3	=[	$run3  ,	enf_run4	] {ai_run(7);};
@@ -202,18 +235,29 @@ void()	enf_paind15	=[	$paind15,	enf_paind16	] {};
 void()	enf_paind16	=[	$paind16,	enf_paind17	] {ai_pain(1);};
 void()	enf_paind17	=[	$paind17,	enf_paind18	] {ai_pain(1);};
 void()	enf_paind18	=[	$paind18,	enf_paind19	] {};
-void()	enf_paind19	=[	$paind19,	enf_run1	] {};
+void()	enf_paind19	=[	$paind19,	enf_run1	] {
+        if(deathmatch&&self.racename=="Borg"&&self.weak==FALSE)
+                {
+                self.weak=TRUE;
+                walkmonster_start();
+                }
+};
 
 void(entity attacker, float damage)	enf_pain =
 {
 	local float r;
+
+        self.phase = rint((random() * 4) + 1);
 
 	r = random ();
 	if (self.pain_finished > time)
 		return;
 
 	
-	if (r < 0.5)
+    if (r < 0.5)
+        if(self.classname=="Borg")
+                BorgSpeak(self);
+        else if(random()<0.5)
 		sound (self, CHAN_VOICE, "enforcer/pain1.wav", 1, ATTN_NORM);
 	else
 		sound (self, CHAN_VOICE, "enforcer/pain2.wav", 1, ATTN_NORM);
@@ -280,14 +324,18 @@ void() enf_die =
 // check for gib
 	if (self.health < -35)
 	{
-        self.enemy.exp = self.enemy.exp + (27 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (27 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (27 - self.health)*skill;
         self.netname = "progs/h_mega.mdl";
         CorpseDie();
         return;
 	}
 
 // regular death
-	sound (self, CHAN_VOICE, "enforcer/death1.wav", 1, ATTN_NORM);
+        if(self.classname=="Borg")
+                sound (self, CHAN_VOICE, "borg/death.wav", 1, ATTN_NORM);
+        else sound (self, CHAN_VOICE, "enforcer/death1.wav", 1, ATTN_NORM);
 //        self.skin = 1;
      if (random() > 0.5)
 		enf_die1 ();
@@ -301,21 +349,43 @@ void() enf_die =
 */
 void() monster_enforcer =
 {
+    if(self.classname!="Borg")
+    {
     if (deathmatch == 1)
 	{
 		remove(self);
 		return;
 	}
-	
+         
+        if(!self.charmed)
+        {
+	precache_model2 ("progs/enforcer.mdl");
+	precache_model2 ("progs/h_mega.mdl");
+
+	precache_sound2 ("enforcer/death1.wav");
+	precache_sound2 ("enforcer/idle1.wav");
+	precache_sound2 ("enforcer/pain1.wav");
+	precache_sound2 ("enforcer/pain2.wav");
+	precache_sound2 ("enforcer/sight1.wav");
+	precache_sound2 ("enforcer/sight2.wav");
+	precache_sound2 ("enforcer/sight3.wav");
+	precache_sound2 ("enforcer/sight4.wav");
+        }
+	if(skill==3)
+		self.health = 160;
+	else	self.health = 80;
+	self.mass = 1.5;
+        self.classname ="enforcer";
+     }
+
 	self.solid = SOLID_SLIDEBOX;
 	self.movetype = MOVETYPE_STEP;
+        self.lasersound="";
 
 	setmodel (self, "progs/enforcer.mdl");
 
 	setsize (self, '-16 -16 -24', '16 16 40');
-	self.health = 80;
         self.alive = TRUE;
-        self.classname ="enforcer";
         // 31-39 cells
 	self.ammo_cells = random() * 10;
         self.ammo_cells = rint(self.ammo_cells) + 30;
@@ -328,6 +398,25 @@ void() monster_enforcer =
 	self.th_die = enf_die;
 	self.th_missile = enf_atk1;
         self.active = 2;
+        if(deathmatch&&self.racename=="Borg")
+                enf_paind8();
+        else walkmonster_start();
+};
 
-	walkmonster_start();
+/*QUAKED monster_borg (1 0 0) (-16 -16 -24) (16 16 40) Ambush
+
+*/
+void() monster_borg=
+{
+	if(skill==3)
+		self.health = 400;
+	else	self.health = 200;
+	self.mass = 2;
+        self.classname ="Borg";
+        self.racename="Borg";
+        self.phase = rint((random() * 4) + 1);
+        self.classlabel="Drone";
+        if(self.skin<3)
+                self.skin=rint(random()*5) + 3;
+        monster_enforcer();
 };

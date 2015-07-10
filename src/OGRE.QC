@@ -61,12 +61,14 @@ void() OgreFireGrenade =
         local float zchange,dist;
 	local string str;
 
-       if(self.ammo_rockets <= 0)
+       if(self.ammo_rockets <= 0||(self.onfire&&random()>0.1))
        {
-        ai_run_melee();		// switch to the chainsaw
-        return;
+                self.th_run();         // get in close
+                return;
        }
-
+        if(self.lasthand==1)
+                self.lasthand=0;
+                
         if (self.ammo_rockets > 0)
                 self.ammo_rockets = self.ammo_rockets - 1;
 	
@@ -104,7 +106,13 @@ void() OgreFireGrenade =
         missile.touch = GrenadeTouch;
 	
 // set missile duration
-	missile.nextthink = time + 2.5;
+        if(self.onfire)
+        {
+                missile.netname="dumb ass ogre";
+                missile.nextthink = time;
+        }
+        else missile.nextthink = time + 2.5;
+
         missile.think = GrenadeExplode;
 
 	setmodel (missile, "progs/grenade.mdl");
@@ -152,14 +160,49 @@ local float 	ldmg;
 	}
 };
 
+void() ChainSound =
+{
+        if(!self.owner.alive||self.owner.lasthand==0)
+                remove(self);
+        else sound(self.owner,CHAN_AUTO,"weapons/ogsawidl.wav",1,ATTN_NORM);
+        self.think=ChainSound;
+        self.nextthink=time +0.75;
+};
+
+void() SpawnChainSounder =
+{
+local entity newmis;
+        self.lasthand=1;
+        newmis=spawn();
+        newmis.owner=self;
+        setorigin(newmis,self.origin);
+        newmis.think=ChainSound;
+        newmis.nextthink=time+0.5;
+};
+
+void() ogre_pull1	=[	$pull1,	ogre_pull2	] {};
+void() ogre_pull2	=[	$pull2,	ogre_pull3	] {};
+void() ogre_pull3	=[	$pull3,	ogre_pull4	] {};
+void() ogre_pull4	=[	$pull4,	ogre_pull5	] {};
+void() ogre_pull5	=[	$pull5,	ogre_pull6	] {};
+void() ogre_pull6       =[      $pull6, ogre_pull7      ] {};
+void() ogre_pull7       =[      $pull7, ogre_pull8      ] {sound(self,CHAN_AUTO,"weapons/ogsawact.wav",1,ATTN_NORM);
+makevectors(self.angles);
+particle (self.origin, v_forward*50+v_up*15, 242, 10);
+};
+void() ogre_pull8       =[      $pull8, ogre_pull9      ] {};
+void() ogre_pull9       =[      $pull9, ogre_pull10 ] {};
+void() ogre_pull10      =[      $pull10, ogre_pull11 ] {};
+void() ogre_pull11      =[      $pull11, ogre_melee      ] {if(self.lasthand<1)SpawnChainSounder();};
+
 
 void() ogre_stand1	=[	$stand1,	ogre_stand2	] {ai_stand();};
 void() ogre_stand2	=[	$stand2,	ogre_stand3	] {ai_stand();};
 void() ogre_stand3	=[	$stand3,	ogre_stand4	] {ai_stand();};
 void() ogre_stand4	=[	$stand4,	ogre_stand5	] {ai_stand();};
 void() ogre_stand5	=[	$stand5,	ogre_stand6	] {
-if (random() < 0.2)
-	sound (self, CHAN_VOICE, "ogre/ogidle.wav", 1, ATTN_IDLE);
+//if (random() < 0.2)
+//	sound (self, CHAN_VOICE, "ogre/ogidle.wav", 1, ATTN_IDLE);
 ai_stand();
 };
 void() ogre_stand6	=[	$stand6,	ogre_stand7	] {ai_stand();};
@@ -171,15 +214,15 @@ void() ogre_walk1	=[	$walk1,		ogre_walk2	] {ai_walk(3);};
 void() ogre_walk2	=[	$walk2,		ogre_walk3	] {ai_walk(2);};
 void() ogre_walk3	=[	$walk3,		ogre_walk4	] {
 ai_walk(2);
-if (random() < 0.2)
-	sound (self, CHAN_VOICE, "ogre/ogidle.wav", 1, ATTN_IDLE);
+//if (random() < 0.2)
+//	sound (self, CHAN_VOICE, "ogre/ogidle.wav", 1, ATTN_IDLE);
 };
 void() ogre_walk4	=[	$walk4,		ogre_walk5	] {ai_walk(2);};
 void() ogre_walk5	=[	$walk5,		ogre_walk6	] {ai_walk(2);};
 void() ogre_walk6	=[	$walk6,		ogre_walk7	] {
 ai_walk(5);
-if (random() < 0.1)
-	sound (self, CHAN_VOICE, "ogre/ogdrag.wav", 1, ATTN_IDLE);
+//if (random() < 0.1)
+//        sound (self, CHAN_VOICE, "ogre/ogdrag.wav", 1, ATTN_IDLE);
 };
 void() ogre_walk7	=[	$walk7,		ogre_walk8	] {ai_walk(3);};
 void() ogre_walk8	=[	$walk8,		ogre_walk9	] {ai_walk(2);};
@@ -372,7 +415,9 @@ void() ogre_die =
 // check for gib
         if (self.health < -50)
 	{
-        self.enemy.exp = self.enemy.exp + (70 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (70 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (70 - self.health)*skill;
         self.netname = "progs/h_ogre.mdl";
         CorpseDie();
         return;
@@ -388,12 +433,15 @@ void() ogre_die =
 
 void() ogre_melee =
 {
-	if (random() > 0.5)
+        if(self.lasthand<1)
+                ogre_pull1();
+        else if (random() > 0.5)
 		ogre_smash1 ();
 	else
 		ogre_swing1 ();
 };
 
+/*
 void () ogre_killcorpse =
 {
         if(other==self.enemy)
@@ -404,6 +452,7 @@ void () ogre_killcorpse =
                 ogre_melee();
                 }
 };
+*/
 /*QUAKED monster_ogre (1 0 0) (-32 -32 -24) (32 32 64) Ambush
 
 */
@@ -420,7 +469,10 @@ void() monster_ogre =
 	setmodel (self, "progs/ogre.mdl");
 
 	setsize (self, VEC_HULL2_MIN, VEC_HULL2_MAX);
-	self.health = 200;
+	if(skill==3)
+		self.health = 400;
+	else	self.health = 200;
+	self.mass = 2;
         self.alive = TRUE;
         self.classname ="ogre";
         // 15-23 grenades
@@ -431,13 +483,13 @@ void() monster_ogre =
 	self.th_walk = ogre_walk1;
 	self.th_run = ogre_run1;
 	self.th_die = ogre_die;
-	self.th_melee = ogre_melee;
+        self.th_melee = ogre_melee;
 	self.th_missile = ogre_nail1;
 	self.th_pain = ogre_pain;
-        self.touch = ogre_killcorpse;
+//        self.touch = ogre_killcorpse;
         self.initthink = monster_ogre;
         self.active = 3;
-
+        self.lasthand= -1;
 	walkmonster_start();
 };
 

@@ -177,7 +177,7 @@ void		end_sys_globals;		// flag for structure dumping
 .float		armortype;		// save this fraction of incoming damage
 .float		armorvalue;
 
-.float		waterlevel;		// 0 = not in, 1 = feet, 2 = wast, 3 = eyes
+.float          waterlevel;             // 0 = not in, 1 = feet, 2 = waist, 3 = eyes
 .float		watertype;		// a contents value
 
 .float		ideal_yaw;
@@ -273,7 +273,7 @@ float	RANGE_FAR				= 3;
 float	DEAD_NO					= 0;
 float	DEAD_DYING				= 1;
 float	DEAD_DEAD				= 2;
-float	DEAD_RESPAWNABLE		= 3;
+float   DEAD_RESPAWNABLE                        = 3;
 
 // takedamage values
 
@@ -288,20 +288,39 @@ float	IT_SUPER_SHOTGUN		= 2;
 float   IT_NAILGUN                      = 4;
 float   IT_SUPER_NAILGUN                = 8;
 float	IT_GRENADE_LAUNCHER		= 16;
-float   IT_PIPE_LAUNCHER                = 17;
 float   IT_ROCKET_LAUNCHER              = 32;
+float   IT_LIGHTNING                    = 64;
+
+// extra weaps- with grenade launcher
+float   IT_PIPE_LAUNCHER                = 17;
+float   IT_FIREBALLGUN                  = 18;
+float   IT_FLAMETHROWER                 = 19;
+float   IT_TRIPMINE                     = 20;
+float   IT_BETTY                        = 21;
+
+// extra weaps- with rocket launcher
 float   IT_RAPID_LAUNCHER               = 33;
 float   IT_SPREAD_LAUNCHER              = 34;
 float   IT_HOME_LAUNCHER                = 35;
-float   IT_FIREBALLGUN                  = 18;
-float   IT_FLAMETHROWER                 = 19;
-float   IT_LIGHTNING                    = 64;
+
+// extra weap- with lightning
 float   IT_LASERGUN                     = 65;
-float   IT_SNIPERGUN                    = 129;
-float   IT_EXTRA_WEAPON                 = 128;
 
+//Duke's weapons
+float   IT_FREEZEGUN                    =128;
+float   IT_SHRINKGUN                    =129;
 
+//Fremen's weapons
+float   IT_MAUDIB                       =130;
 
+//Special Weapons
+float   IT_SNIPERGUN                    =131;// comes with shotgun
+float   IT_CHAKRAM                      =132;
+float   IT_DISC                         =133;
+float   IT_SPECIAL                      =134;
+float   IT_SWORD                        =135;
+float   IT_BATLETH                      =136;
+float   IT_SABER                        =137;
 
 float	IT_SHELLS				= 256;
 float	IT_NAILS				= 512;
@@ -321,8 +340,12 @@ float	IT_INVULNERABILITY		= 1048576;
 float	IT_SUIT					= 2097152;
 float	IT_QUAD					= 4194304;
 
-// point content values
+/*******ITEMS2*******/
+//New items
+float   IT_GHOOK                        =1;
+float   IT_JETPACK                      =2;
 
+// point content values
 float	CONTENT_EMPTY			= -1;
 float	CONTENT_SOLID			= -2;
 float	CONTENT_WATER			= -3;
@@ -707,7 +730,12 @@ float SVC_SETVIEWPORT = 5;    // Net.Protocol 0x05
 float SVC_SETVIEWANGLES = 10; // Net.Protocol 0x0A
 float SVC_UPDATEENTITY = 128; // Net.Protocol 0x80
 
+.void() oldthink;
 .string frommonname;
+.string lasersound;
+.string oldweaponmodel;
+.float items2;//for new items
+.float util;//for new items
 .float Kick_em;
 .float isfeign; 
 .float beendead;
@@ -719,12 +747,39 @@ float SVC_UPDATEENTITY = 128; // Net.Protocol 0x80
 .float alive;
 .float bloodloss;
 .float onfire;
+.float inpain;
+.float oldskin;
+.float jumpin;
+.float tagged; // for pipebombs attached to someone
+.float message_time;
+.float level;
+.float phase;
+
+//T-800 in water
+.float zap_finished;
+
+//Jaworksi OW
+.float ow_finished;
+
+//Predator cloak
+.float cloakzap;
+//.float playpainspecial;
+//.float playvisspecial;
+.float dishonor;
+.entity lockentity;
 
 // Magic effect flags
 .entity newholo;
 .entity teleeyes;
 .entity controller;
 .entity woundmaker;
+.entity fireflies;
+.entity explosion;
+.entity lightning;
+.entity sight;
+//.entity clone;
+.vector wallspot;
+.vector o_angle;
 .float mana;
 .float init_mana;
 .float exp;
@@ -736,17 +791,88 @@ float SVC_UPDATEENTITY = 128; // Net.Protocol 0x80
 .float firesistime;
 .float reflecttime;
 .float protmisstime;
+.float enchant_axe;
 .float prottime;
-.float silencetime;
 .float archtime;
 .float isfeign;
 .float stepping;
 .float running;
+.float climbing;
 .float follow;
 .float amtaxe;
 .float suff;
 .float dog_time;
 .float dog_finished;
+.float fooling;
+
+//Class and Race stats
+.float race;
+.float class;
+.string racename;
+.string classlabel;
+.float friction;
+.float jumphite;
+.float intel;
+.float endurence;
+.float damagetake;
+.float hitplus;
+.float accuracy;
+.float attempthit;
+.float actualhit;
+.float attackspeed;
+.float volume;
+.float raceset;
+.float classset;
+.float skinset;
+.float allset;
+.float ressurect;
+.float waterbreathe;
+.float fireresist;
+.float slimeresist;
+.float magicresist;
+.float healthregen;
+.float claws;
+.float featherfall;
+.float berzerker;
+.float energyabsorb;
+.float anyinvis;
+.float nospells;
+.float weakheart;
+.float weak;
+.float fireresist;
+.float injury_time;
+.float wallclimb;
+.float heatsee;
+.float boltsee;
+.float saberset;
+.float borgview;
+.entity saber;
+.entity sword;
+.entity batleth;
+//.entity ghook;
+.entity borgsee;
+.float autojet;
+.float hover;
+.float hoverstarttime;
+.float jetsound_finished;
+.float hoverlevel;
+.float shrink_time;
+.float small;
+.float decap;
+.float lasthand;
+.float scream;
+.float deadmeat;
+.float ghook_dropped;
+.float ghook_holdon;
+.float ghook_attached;
+.float ghook_extended;
+.float dangle;
+.vector ghook_spot;
+
+float   modelindex_eyes, modelindex_player, modelindex_dog;
+//Extra Parms, mainly for copying info on mutants across levels.
+//float           parm17, parm18, parm19, parm20;//parm17-24 for mutants
+//float           parm21, parm22, parm23, parm24; 
 
 // prototypes
 void() BecomeExplosion;
@@ -777,6 +903,7 @@ void(vector dest) ChooseTurn;
 void() ai_face;
 void() TeleEyes;
 void(float way) CycleSpell;
+void(float way) CycleSpellLevel;
 void() Cast;
 void() PrintSpellName;
 void(entity loser, entity winner)BounceBack;
@@ -790,11 +917,40 @@ void(entity me) HoloCam;
 void(vector org,vector dir, entity cont,string type,float ox) launch_spike;
 void(vector org) SpawnFlame;
 void(entity spot) MagicEffect;
-void(vector org, vector vel, float damage) SpawnBlood;
-void(entity targ, entity attacker) Killed;
+void(vector org, vector vel, float damage, entity loser) SpawnBlood;
+void(entity targ, entity attacker,entity inflictor) Killed;
 .void()initthink;
 void() player_diea1;
 void()  holo_upa1;
 void()  player_duck1;
 void()  player_stand1;
+void()  player_srun;
 void() W_FireFlame;
+void(string headmdl, string frommon) MakeSolidCorpse;
+void(string gibname, float dm, string frommon) ThrowSolidHead;
+void() GrenadeExplode;
+void() SelfCast;
+void() LaserSight;
+void (entity printo) ExperienceCheck;
+void(vector org) spawn_tfog;
+void()SetLaser;
+void()Throwdisc;
+void()Disc;
+void()FlameTouch;
+void(vector dir, entity cont) PLaser;
+void() Laser_Touch;
+void() LaserSound;
+void()ChuckHead;
+void(entity attacker, float damage)player_pain;
+//void(entity me, vector viewangles) SetViewAngle;
+void(entity actor)BorgSpeak;
+void()monster_enforcer;
+void() monster_dog;
+void() monster_borgdog;
+void() monster_borg;
+void(entity actor) CheckBorgCommands;
+void(entity inflictor, entity attacker, float dam, entity ignore) T_RadiusDamageWater;
+void(entity winner) BorgShield;
+void(float fromchange) Batleth;
+void(float fromchange) Lsword;
+void(entity loser) Woof;

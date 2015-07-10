@@ -1,4 +1,3 @@
-
 entity stemp, otemp, s, old;
 
 
@@ -41,23 +40,20 @@ local string printnum;
 			return;
 		found_secrets = found_secrets + 1;
 		WriteByte (MSG_ALL, SVC_FOUNDSECRET);
-                self.enemy.exp = self.enemy.exp + 500;
-                sprint(self.enemy,"Experience points: ");
-                printnum=ftos(self.enemy.exp);
-                sprint(self.enemy,printnum);
-                sprint(self.enemy,"\n");
+                if(self.enemy.racename!="T-800"&&self.enemy.racename!="Borg")
+                {
+                if(self.enemy.racename=="Human")
+                        self.enemy.exp = self.enemy.exp + 500*skill/3.5;
+                else self.enemy.exp = self.enemy.exp + 500*skill/5;
+                ExperienceCheck(self.enemy);
+                }
 	}
-
 	if (self.noise)
 		sound (self, CHAN_VOICE, self.noise, 1, ATTN_NORM);
-
 // don't trigger again until reset
 	self.takedamage = DAMAGE_NO;
-
 	activator = self.enemy;
-	
 	SUB_UseTargets();
-
 	if (self.wait > 0)	
 	{
 		self.think = multi_wait;
@@ -86,10 +82,9 @@ void() multi_use =
 
 void() multi_touch =
 {
-	if (other.classname != "player")
-		return;
-	
 // if the trigger has an angles field, check player's facing direction
+	if (other.classname == "player"||other.classname=="head"||other.classname=="corpse"||other.charmed)
+	{
 	if (self.movedir != '0 0 0')
 	{
 		makevectors (other.angles);
@@ -99,6 +94,8 @@ void() multi_touch =
 	
 	self.enemy = other;
 	multi_trigger ();
+	}
+	else return;
 };
 
 /*QUAKED trigger_multiple (.5 .5 .5) ? notouch
@@ -309,11 +306,11 @@ void() play_teleport =
 void(vector org) spawn_tfog =
 {
 	s = spawn ();
+	s.effects=EF_MUZZLEFLASH;
 	s.origin = org;
-	s.nextthink = time + 0.2;
-	s.think = play_teleport;
-
-	WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
+        s.nextthink = time + 0.2;
+        s.think = play_teleport;
+        WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
 	WriteByte (MSG_BROADCAST, TE_TELEPORT);
 	WriteCoord (MSG_BROADCAST, org_x);
 	WriteCoord (MSG_BROADCAST, org_y);
@@ -323,7 +320,7 @@ void(vector org) spawn_tfog =
 
 void() tdeath_touch =
 {
-	if (other == self.owner)
+        if (other == self.owner||other.classname=="lightsaber"||other.classname=="batleth"||other.classname=="chakram"||other.classname=="longsword"||other.classname=="disc")
 		return;
 
 // frag anyone who teleports in on top of an invincible player
@@ -336,13 +333,13 @@ void() tdeath_touch =
 			T_Damage (self.owner, self, self, 50000);
 			return;
 		}
-		
 	}
 
 	if (other.health)
-	{
+        {
+                other.deathtype="telefrag";
 		T_Damage (other, self, self, 50000);
-	}
+        }
 };
 
 
@@ -358,6 +355,7 @@ local entity	death;
 	setsize (death, death_owner.mins - '1 1 1', death_owner.maxs + '1 1 1');
 	setorigin (death, org);
 	death.touch = tdeath_touch;
+	death.effects=EF_MUZZLEFLASH;
 	death.nextthink = time + 0.2;
 	death.think = SUB_Remove;
 	death.owner = death_owner;
@@ -379,31 +377,14 @@ void() teleport_touch =
        }
 
 	if (self.spawnflags & PLAYER_ONLY)
-		if (other.classname != "player") return;
+		if (other.classname != "player"&&other.controller.classname!="player") return;
 
-//dave changed to teleportweapons
-	if ((other.classname=="trigger_changelevel") |
-	    (other.classname=="trap_shooter") |
-	    (other.classname=="trap_spikeshooter") |
-	    (other.classname=="trigger_secret") |
-	    (other.classname=="door") |
-	    (other.classname=="explo_box") |
-	    (other.classname=="bubble") |
-	    (other.classname=="path_corner") |
-	    (other.classname=="plat") |
-	    (other.classname=="train") |
-	    (other.classname=="teledeath") |
-	    (other.classname=="teledeath2") |
-	    (other.classname=="DelayedUse") |
-	    (other.classname=="info_player_start") |
-	    (other.classname=="testplayerstart") |
-	    (other.classname=="info_player_coop") |
-	    (other.classname=="info_intermission") |
-	    (other.classname=="info_player_deathmatch") |
-	    (other.classname=="misc_teleporttrain") )
-	{
-	return;
-	}
+        if (other.solid!=SOLID_BBOX&&other.solid!=SOLID_SLIDEBOX)
+                return;
+
+        if(!other.inpain)
+                if (other.classname=="lightsaber"||other.classname=="batleth"||other.classname=="longsword"||other.classname=="disc")
+                        return;
 
 	SUB_UseTargets ();
 
@@ -570,7 +551,7 @@ void() hurt_on =
 
 void() hurt_touch =
 {
-	if (other.takedamage)
+        if (other.takedamage)
 	{
 		self.solid = SOLID_NOT;
 		T_Damage (other, self, self, self.dmg);
@@ -600,7 +581,7 @@ float PUSH_ONCE = 1;
 
 void() trigger_push_touch =
 {
-	if (other.classname == "grenade")
+	if (other.classname == "grenade"||other.controller.classname=="player"||other.owner.classname=="player")
 		other.velocity = self.speed * self.movedir * 10;
 	else if (other.health > 0)
 	{
@@ -666,4 +647,3 @@ void() trigger_monsterjump =
 	InitTrigger ();
 	self.touch = trigger_monsterjump_touch;
 };
-

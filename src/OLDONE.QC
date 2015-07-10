@@ -164,7 +164,7 @@ void() finale_2 =
 	WriteCoord (MSG_BROADCAST, o_y);
 	WriteCoord (MSG_BROADCAST, o_z);
 
-        sound (shub, CHAN_VOICE, "misc/r_tele1.wav", 1, ATTN_NORM);
+	sound (shub, CHAN_VOICE, "misc/r_tele1.wav", 1, ATTN_NORM);
 	
 	self.nextthink = time + 2;
 	self.think = finale_3;
@@ -244,7 +244,7 @@ void() finale_4 =
 */
 void() monster_oldone =
 {
-        if (deathmatch)
+	if (deathmatch)
 	{
 		remove(self);
 		return;
@@ -264,12 +264,13 @@ void() monster_oldone =
 	setsize (self, '-160 -128 -24', '160 128 256');
 
 	self.health = 40000;		// kill by telefrag
+	self.mass = 10000;		// Can't move
 	self.think = old_idle1;
 	self.nextthink = time + 0.1;	
 	self.takedamage = DAMAGE_YES;
 	self.th_die = finale_1;
 	shub = self;
-        self.active = -1;
 	
 	total_monsters = total_monsters + 1;
 };
+

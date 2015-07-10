@@ -158,7 +158,9 @@ void() demon_die =
 // check for gib
         if (self.health < -60)
 	{
-        self.enemy.exp = self.enemy.exp + (100 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (100 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (100 - self.health)*skill;
         self.netname = "progs/h_demon.mdl";
         CorpseDie();
         return;
@@ -174,6 +176,7 @@ void() Demon_MeleeAttack =
 	demon1_atta1 ();
 };
 
+/*
 void () demon_killcorpse =
 {
         if(other==self.enemy)
@@ -184,7 +187,7 @@ void () demon_killcorpse =
                 Demon_MeleeAttack();
                 }
 };
-
+*/
 /*QUAKED monster_demon1 (1 0 0) (-32 -32 -24) (32 32 64) Ambush
 
 */
@@ -202,7 +205,10 @@ void() monster_demon1 =
 	setmodel (self, "progs/demon.mdl");
 
 	setsize (self, VEC_HULL2_MIN, VEC_HULL2_MAX);
-	self.health = 300;
+	if(skill==3)
+		self.health = 600;
+	else	self.health = 300;
+	self.mass = 3;
         self.alive = TRUE;
         self.classname ="fiend";
         self.initthink = monster_demon1;
@@ -213,7 +219,7 @@ void() monster_demon1 =
 	self.th_melee = Demon_MeleeAttack;		// one of two attacks
 	self.th_missile = demon1_jump1;			// jump attack
 	self.th_pain = demon1_pain;
-        self.touch = demon_killcorpse;
+//        self.touch = demon_killcorpse;
         self.active = 1;
 
 	walkmonster_start();
@@ -330,7 +336,7 @@ void()	Demon_JumpTouch =
 		if (self.flags & FL_ONGROUND)
 		{	// jump randomly to not get hung up
 //dprint ("popjump\n");
-        self.touch = demon_killcorpse;
+//        self.touch = demon_killcorpse;
 	self.think = demon1_jump1;
 	self.nextthink = time + 0.1;
 
@@ -342,7 +348,7 @@ void()	Demon_JumpTouch =
 		return;	// not on ground yet
 	}
 
-        self.touch = demon_killcorpse;
+//        self.touch = demon_killcorpse;
 	self.think = demon1_jump11;
 	self.nextthink = time + 0.1;
 };

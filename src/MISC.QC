@@ -120,9 +120,14 @@ Default style is 0
 void() light_torch_small_walltorch =
 {
 	precache_model ("progs/flame.mdl");
+        setsize(self,'0 0 -24','0 0 24');
 	setmodel (self, "progs/flame.mdl");
+        self.solid=SOLID_BBOX;
+        self.movetype=MOVETYPE_NONE;
+        self.touch=W_FireFlame;
+        self.netname="heat";
 	FireAmbient ();
-	makestatic (self);
+//        makestatic (self);
 };
 
 /*QUAKED light_flame_large_yellow (0 1 0) (-10 -10 -12) (12 12 18)
@@ -131,10 +136,15 @@ Large yellow flame ball
 void() light_flame_large_yellow =
 {
 	precache_model ("progs/flame2.mdl");
+        setsize(self,'-3 -3 -24','3 3 24');
 	setmodel (self, "progs/flame2.mdl");
 	self.frame = 1;
+        self.solid=SOLID_BBOX;
+        self.movetype=MOVETYPE_NONE;
+        self.touch=W_FireFlame;
+        self.netname="heat";
 	FireAmbient ();
-	makestatic (self);
+//        makestatic (self);
 };
 
 /*QUAKED light_flame_small_yellow (0 1 0) (-8 -8 -8) (8 8 8) START_OFF
@@ -144,8 +154,13 @@ void() light_flame_small_yellow =
 {
 	precache_model ("progs/flame2.mdl");
 	setmodel (self, "progs/flame2.mdl");
+        setsize(self,'-3 -3 -24','3 3 24');
+        self.solid=SOLID_BBOX;
+        self.movetype=MOVETYPE_NONE;
+        self.touch=W_FireFlame;
+        self.netname="heat";
 	FireAmbient ();
-	makestatic (self);
+//        makestatic (self);
 };
 
 /*QUAKED light_flame_small_white (0 1 0) (-10 -10 -40) (10 10 40) START_OFF
@@ -155,8 +170,13 @@ void() light_flame_small_white =
 {
 	precache_model ("progs/flame2.mdl");
 	setmodel (self, "progs/flame2.mdl");
+        setsize(self,'-3 -3 -24','3 3 24');
+        self.solid=SOLID_BBOX;
+        self.movetype=MOVETYPE_NONE;
+        self.touch=W_FireFlame;
+        self.netname="heat";
 	FireAmbient ();
-	makestatic (self);
+//        makestatic (self);
 };
 
 //============================================================================
@@ -186,7 +206,7 @@ local entity	fireball;
 	fireball = spawn();
         fireball.health = 5;
         fireball.takedamage = DAMAGE_AIM;
-        fireball.th_die = FireDie;
+        fireball.th_die = SUB_Remove;
         fireball.solid = SOLID_BBOX;
         fireball.movetype = MOVETYPE_BOUNCE;
 	fireball.velocity = '0 0 1000';
@@ -201,6 +221,7 @@ local entity	fireball;
         fireball.active = 0.25;
         fireball.think = FireDie;
         fireball.touch = FireTouch;
+        fireball.beendead = TRUE;        
 	
 	self.nextthink = time + (random() * 5) + 3;
 	self.think = fire_fly;
@@ -272,7 +293,7 @@ void() misc_explobox2 =
 	local float	oldz;
 	
 	self.solid = SOLID_BBOX;
-	self.movetype = MOVETYPE_NONE;
+        self.movetype = MOVETYPE_STEP;
 	precache_model2 ("maps/b_exbox2.bsp");
 	setmodel (self, "maps/b_exbox2.bsp");
 	precache_sound ("weapons/r_exp3.wav");
@@ -297,14 +318,12 @@ void() misc_explobox2 =
 float SPAWNFLAG_SUPERSPIKE	= 1;
 float SPAWNFLAG_LASER = 2;
 
-void(vector org, vector vec) LaunchLaser;
-
 void() spikeshooter_use =
 {
 	if (self.spawnflags & SPAWNFLAG_LASER)
 	{
-		sound (self, CHAN_VOICE, "enforcer/enfire.wav", 1, ATTN_NORM);
-		LaunchLaser (self.origin, self.movedir);
+                LaserSound();
+                PLaser (self.movedir,self);
 	}
 	else
 	{

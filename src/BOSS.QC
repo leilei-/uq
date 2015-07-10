@@ -176,12 +176,20 @@ void() boss_death7 = [$death7, boss_death8] {};
 void() boss_death8 = [$death8, boss_death9] {};
 void() boss_death9 = [$death9, boss_death10]
 {
+local entity head;
 	sound (self, CHAN_BODY, "boss1/out1.wav", 1, ATTN_NORM);
 	WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
 	WriteByte (MSG_BROADCAST, TE_LAVASPLASH);
 	WriteCoord (MSG_BROADCAST, self.origin_x);
 	WriteCoord (MSG_BROADCAST, self.origin_y);
 	WriteCoord (MSG_BROADCAST, self.origin_z);
+        head=findradius(self.origin,10000);
+        while(head)
+        {
+        if(head.classname=="player")
+                head.exp=head.exp + 50000*skill;
+        head=head.chain;
+        }
 };
 
 void() boss_death10 = [$death9, boss_death10]
@@ -218,7 +226,7 @@ void(vector p) boss_missile =
 	
 	vec = normalize (d - org);
 
-//        launch_spike (org, vec);
+        launch_spike (org, vec,self,"shrapnel",0);
 	setmodel (newmis, "progs/lavaball.mdl");
 	newmis.avelocity = '200 100 300';
 	setsize (newmis, VEC_ORIGIN, VEC_ORIGIN);		
@@ -237,8 +245,7 @@ void() boss_awake =
 	self.solid = SOLID_SLIDEBOX;
 	self.movetype = MOVETYPE_STEP;
 	self.takedamage = DAMAGE_NO;
-        self.active = -1;
-
+	
 	setmodel (self, "progs/boss.mdl");
 	setsize (self, '-128 -128 -24', '128 128 256');
 	
@@ -276,7 +283,6 @@ void() monster_boss =
 	precache_sound ("boss1/out1.wav");
 	precache_sound ("boss1/sight1.wav");
 	precache_sound ("misc/power.wav");
-	precache_sound ("boss1/throw.wav");
 	precache_sound ("boss1/pain.wav");
 	precache_sound ("boss1/death.wav");
 

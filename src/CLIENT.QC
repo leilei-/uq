@@ -1,15 +1,16 @@
 // prototypes
 void () W_WeaponFrame;
 void() W_SetCurrentAmmo;
-void() player_pain;
 void() player_stand1;
+void() player_shrink1;
+void() player_grow1;
+void(entity attacker, float damage) player_spain;
 void (vector org) spawn_tfog;
 void (vector org, entity death_owner) spawn_tdeath;
 void() play_dog_leap1;
 // kicking
 void() PlayerTouch;
 
-float   modelindex_eyes, modelindex_player, modelindex_dog;
 /*
 =============================================================================
 
@@ -29,7 +30,32 @@ void() info_intermission =
 {
 };
 
+/*
+void() RestoreMutant =
+{
+        self.classlabel = "Mutant";
+        self.jumphite=parm17;
+        self.intel=parm18;
+        self.damagetake=parm19;
+        self.accuracy=parm20;
+        self.hitplus=parm21;
+        self.attackspeed=parm22;
+        self.speed=parm23;
+        self.mass=parm24;
+};
 
+void() StoreMutant =
+{
+ parm17=self.jumphite;
+ parm18=self.intel;
+ parm19=self.damagetake;
+ parm20=self.accuracy;
+ parm21=self.hitplus;
+ parm22=self.attackspeed;
+ parm23=self.speed;
+ parm24=self.mass;
+};
+*/
 
 void() SetChangeParms =
 {
@@ -40,11 +66,11 @@ void() SetChangeParms =
         self.init_mana = self.init_mana - time;
         parm10 = self.init_mana;
         parm11 = self.exp;
-// cap super health
-	if (self.health > 100)
-		self.health = 100;
-	if (self.health < 50)
-		self.health = 50;
+// cap super health & boost health if too low
+        if (self.health > self.max_health)
+                self.health = self.max_health;
+        if (self.health < self.max_health/2)
+                self.health = self.max_health/2;
 	parm1 = self.items;
 	parm2 = self.health;
 	parm3 = self.armorvalue;
@@ -55,37 +81,87 @@ void() SetChangeParms =
 	parm5 = self.ammo_nails;
 	parm6 = self.ammo_rockets;
 	parm7 = self.ammo_cells;
-	parm8 = self.weapon;
+        parm8 = self.max_health;
 	parm9 = self.armortype * 100;
-        parm12 = self.amtaxe;
+        parm12 = self.waterbreathe*1 +
+                 self.fireresist*10 +
+                 self.slimeresist*100 +
+                 self.magicresist*1000 +
+                 self.healthregen*10000 +
+                 self.claws*100000 +
+                 self.featherfall*1000000 +
+                 self.berzerker*10000000 +
+                 self.energyabsorb*100000000 +
+                 self.anyinvis*1000000000 +
+                 self.nospells*10000000000 +
+                 self.weakheart*100000000000 +
+                 self.weak*1000000000000 +
+                 self.wallclimb*10000000000000 +
+                 self.heatsee*100000000000000 +
+                 self.boltsee*1000000000000000; 
+        parm13 = self.skin;
+//        parm14 = ;
+        parm15 = self.allset*100000 + self.saberset*10000 + self.level*100 + (self.race - 1)*10 + self.class;
+//        parm16 = ;
+//        if(self.class==6)
+//                StoreMutant();
 };
 
 void() SetNewParms =
 {
-        parm1 = IT_SHOTGUN | IT_AXE | IT_SNIPERGUN;
-	parm2 = 100;
+        parm1 = IT_SHOTGUN | IT_AXE;// | IT_SNIPERGUN;
+        if(deathmatch&&self.max_health>0)
+                parm2 = self.max_health;
+        else parm2 = 50;
 	parm3 = 0;
 	parm4 = 25;
 	parm5 = 0;
 	parm6 = 0;
 	parm6 = 0;
-	parm8 = 1;
+        if(deathmatch&&self.max_health>0)
+                parm8 = self.max_health;
+        else parm8 = 50;
 	parm9 = 0;
         parm10 = time;
         if (deathmatch)
-                parm11 = 900;
-        else parm11 = 0;
-        parm12 = 1;
+                parm11 = 1000;
+        else
+        parm11 = 0;
+        parm12 = 0;
+if(self.allset!=TRUE)
+{
+//        parm14 = FALSE;
+        parm15 = 0;
+//        parm16 = 0;
+        parm13 = 0;
+//        parm18 = 0;
+//        parm19 = 0;
+//        parm20 = 0;
+//        parm21 = 0;
+//        parm22 = 0;
+//        parm23 = 0;
+//        parm24 = 0;
+}
+else
+{
+        parm13 = self.skin;
+//        parm14 = ;
+        parm15 = self.allset*100000 + self.saberset*10000 + self.level*100 + (self.race - 1)*10 + self.class;
+//        parm16 =;
+//        if(self.class==6)
+//                StoreMutant();
+}
 };
 
 void() DecodeLevelParms =
 {
+/*
 	if (serverflags)
 	{
 		if (world.model == "maps/start.bsp")
 			SetNewParms ();		// take away all stuff on starting new episode
 	}
-	
+*/ 
 	self.items = parm1;
 	self.health = parm2;
 	self.armorvalue = parm3;
@@ -93,13 +169,62 @@ void() DecodeLevelParms =
 	self.ammo_nails = parm5;
 	self.ammo_rockets = parm6;
 	self.ammo_cells = parm7;
-	self.weapon = parm8;
+        self.max_health = parm8;
 	self.armortype = parm9 * 0.01;
         self.init_mana = parm10;
         if (deathmatch)
-                self.exp = 900000;
+                {
+                self.exp = 1000000;
+                self.init_mana = time - 1000;
+                }
         else self.exp = parm11;
-        self.amtaxe = parm12;
+        self.attack_finished=self.onfire=self.enchant_axe=self.dog_finished=self.isfeign=self.ducking=self.feigning=self.bloodloss=self.suff=self.levitime=self.firesistime=self.reflecttime=self.protmisstime=self.prottime=self.archtime=self.dog_time=self.alivetime=0;
+        self.boltsee=floor(parm12/1000000000000000);
+                parm12=parm12-self.boltsee*1000000000000000;
+        self.heatsee=floor(parm12/100000000000000);
+                parm12=parm12-self.heatsee*100000000000000;
+        self.wallclimb=floor(parm12/10000000000000);
+                parm12=parm12-self.wallclimb*10000000000000;
+        self.weak=floor(parm12/1000000000000);
+                parm12=parm12-self.weak*1000000000000;
+        self.weakheart=floor(parm12/100000000000);
+                parm12=parm12-self.weakheart*100000000000;
+        self.nospells=floor(parm12/10000000000);
+                parm12=parm12-self.nospells*10000000000;
+        self.anyinvis=floor(parm12/1000000000);
+                parm12=parm12-self.anyinvis*1000000000;
+        self.energyabsorb=floor(parm12/100000000);
+                parm12=parm12-self.energyabsorb*100000000;
+        self.berzerker=floor(parm12/10000000);
+                parm12=parm12-self.berzerker*10000000;
+        self.featherfall=floor(parm12/1000000);
+                parm12=parm12-self.featherfall*1000000;
+        self.claws=floor(parm12/100000);
+                parm12=parm12-self.claws*100000;
+        self.healthregen=floor(parm12/10000);
+                parm12=parm12-self.healthregen*10000;
+        self.magicresist=floor(parm12/1000);
+                parm12=parm12-self.magicresist*1000;
+        self.slimeresist=floor(parm12/100);
+                parm12=parm12-self.slimeresist*100;
+        self.fireresist=floor(parm12/10);
+                parm12=parm12-self.fireresist*10;
+        self.waterbreathe=floor(parm12);
+                parm12=0;
+        self.allset = floor(parm15/100000);
+                parm15=parm15-self.allset*100000;
+//        if(deathmatch&&self.allset)
+//                return;
+        self.skin = parm13;
+//        if(self.allset)
+         self.saberset = floor(parm15/10000);
+                parm15=parm15-self.saberset*10000;
+        self.level = floor(parm15/100);
+                parm15=parm15-self.level*100;
+        self.race = floor(parm15/10) + 1;
+                parm15=parm15-(self.race - 1)*10;
+        self.class = parm15;
+                parm15=0;
 };
 
 /*
@@ -310,6 +435,11 @@ void() changelevel_touch =
 	}
 	bprint (other.netname);
 	bprint (" exited the level\n");
+
+        if(other.saber.running)
+                remove(other.saber);
+        if(other.sight.running)
+                remove(other.sight);
 	
 	nextmap = self.map;
 
@@ -358,7 +488,8 @@ void() respawn =
 	if (coop)
 	{
 		// make a copy of the dead body for appearances sake
-		CopyToBodyQue (self);
+                SolidPlayer();
+//                CopyToBodyQue (self);
 		// get the spawn parms as they were at level start
 		setspawnparms (self);
 		// respawn		
@@ -367,7 +498,8 @@ void() respawn =
 	else if (deathmatch)
 	{
 		// make a copy of the dead body for appearances sake
-		CopyToBodyQue (self);
+                SolidPlayer();
+//                CopyToBodyQue (self);
 		// set default spawn parms
 		SetNewParms ();
 		// respawn		
@@ -393,7 +525,8 @@ void() ClientKill =
 	bprint (" suicides\n");
 	set_suicide_frame ();
 	self.modelindex = modelindex_player;
-	self.frags = self.frags - 2;	// extra penalty
+        if(self.health<self.max_health*0.75)
+                self.frags = self.frags - 2;
 	respawn ();
 };
 
@@ -478,13 +611,28 @@ void() PutClientInServer =
 	self.invisible_finished = 0;
 	self.invincible_finished = 0;
 	self.effects = 0;
-        self.invincible_time = 0;
-        self.alive = TRUE;
+        self.small=FALSE;
+        self.shrink_time=0;
+      self.weapon=1;
+      self.invincible_time = 0;
+      self.alive = TRUE;
+      self.phase = 1;
+	self.climbing=FALSE;
+        self.dangle=FALSE;
 
 	DecodeLevelParms ();
 	
 	W_SetCurrentAmmo ();
 
+        if(self.saber.running||self.saber.follow!=0||self.saber.inpain)
+        {
+        self.saber.running=FALSE;
+        self.saber.follow=0;
+        self.saber.inpain=FALSE;
+        self.saber.aflag=0;
+        remove(self.saber);
+        }
+        
 // Magic stuff
         self.mana = time - self.init_mana;
         self.spell = 24;
@@ -495,9 +643,11 @@ void() PutClientInServer =
 	self.attack_finished = time;
 	self.th_pain = player_pain;
 	self.th_die = PlayerDie;
-        self.mass = 1;
+//        self.mass = 1;
+        self.amtaxe=1;
 	self.touch = PlayerTouch;
-	
+        self.hover=FALSE;
+
 	self.deadflag = DEAD_NO;
 // paustime is set by teleporters to keep the player from moving a while
 	self.pausetime = 0;
@@ -507,7 +657,7 @@ void() PutClientInServer =
 	self.origin = spot.origin + '0 0 1';
 	self.angles = spot.angles;
 	self.fixangle = TRUE;		// turn this way immediately
-
+        self.o_angle = self.angles;
 // oh, this is a hack!
         setmodel (self, "progs/eyes.mdl");
 	modelindex_eyes = self.modelindex;
@@ -522,14 +672,29 @@ void() PutClientInServer =
 
         self.view_ofs = '0 0 22';
 
+        if(self.allset)//||temp1!="0")
+                {
+//                if(temp1!="0")
+//                        TempSetAll();
+                showrace();
+//                if(!self.classset)
+                        showclass();
+//                if(!self.skinset)
+                        showskin();
+                }
+        else self.race=0;
+
+//        if(self.class==6)
+//                RestoreMutant();
+
 	player_stand1 ();
-	
+        self.impulse =45;
+
 	if (deathmatch || coop)
 	{
 		makevectors(self.angles);
 		spawn_tfog (self.origin + v_forward*20);
 	}
-
 	spawn_tdeath (self.origin, self);
 };
 
@@ -710,13 +875,13 @@ void() CheckRules =
 	
 	if (timelimit && time >= timelimit)
 	{
-NextLevel ();
+                NextLevel ();
 		return;
 	}
 	
 	if (fraglimit && self.frags >= fraglimit)
 	{
-NextLevel ();
+                NextLevel ();
 		return;
 	}	
 };
@@ -748,12 +913,14 @@ void() PlayerDeathThink =
 	}
 
 // wait for any button down
-	if (!self.button2 && !self.button1 && !self.button0)
+        if (!self.button2 && !self.button1 && !self.button0)
 		return;
 
 	self.button0 = 0;
 	self.button1 = 0;
 	self.button2 = 0;
+        if(self.racename=="Predator"&&self.explosion.active)
+                self.explosion.origin = self.origin+'0 0 16';
 	respawn();
 };
 
@@ -764,12 +931,12 @@ void() PlayerJump =
         if (self.isfeign)       // experimental
                 return;
 
- 	local vector start, end;
-	
+local vector start, end;
+local float jumpdist;
+
         if (self.levitime > time)
                 {
-                self.flags = self.flags + FL_INWATER;
-                self.velocity = v_forward*180+v_up*60;
+                self.velocity = v_forward*(180/self.mass)+v_up*(60/self.mass);
                 return;
                 }
         if (self.flags & FL_WATERJUMP)
@@ -777,12 +944,16 @@ void() PlayerJump =
 	
         if (self.waterlevel >= 2)
 	{
-		if (self.watertype == CONTENT_WATER)
-                        self.velocity_z = 120/self.mass;
+                if((self.classlabel=="Jedi"||self.classlabel=="Dark Jedi")&&self.exp>=250000)
+                        self.velocity_z = 250/self.mass;
+                else if (self.watertype == CONTENT_WATER)
+                        if (self.racename=="Bossk")
+                                self.velocity_z = self.jumphite*80/self.mass;
+                        else self.velocity_z = self.jumphite*24/self.mass;
 		else if (self.watertype == CONTENT_SLIME)
-                        self.velocity_z = 110/self.mass;
+                        self.velocity_z = self.jumphite*22/self.mass;
 		else
-                        self.velocity_z = 100/self.mass;
+                        self.velocity_z = self.jumphite*20/self.mass;
 // play swiming sound
                 if (self.swim_flag < time && self.waterlevel >= 2)
 		{
@@ -797,15 +968,22 @@ void() PlayerJump =
 	}
 
         if (!(self.flags & FL_ONGROUND))
-		return;
+                {
+                if((self.classlabel!="Jedi"&&self.classlabel!="Dark Jedi")||self.exp<250000)
+                        return;
+                }
+        else self.flags = self.flags - FL_ONGROUND;  // don't stairwalk
 
         if ( !(self.flags & FL_JUMPRELEASED))
-		return;		// don't pogo stick
+                {
+                if((self.classlabel!="Jedi"&&self.classlabel!="Dark Jedi")||self.exp<250000)
+                        return;         // don't pogo stick
+                }
+        else self.flags = self.flags - (self.flags & FL_JUMPRELEASED);
 
-        self.flags = self.flags - (self.flags & FL_JUMPRELEASED);
-
-	self.flags = self.flags - FL_ONGROUND;	// don't stairwalk
 	
+        self.jumpin = TRUE;
+
 	self.button2 = 0;
 // player jumping sound
         if (self.dog_time)
@@ -822,8 +1000,41 @@ void() PlayerJump =
         }
         else if (self.levitime < time) 
         {
-                sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
-                self.velocity_z = self.velocity_z + 270;
+                if((self.classlabel=="Jedi"||self.classlabel=="Dark Jedi")&&self.exp>=250000)
+                        self.velocity_z = 350/self.mass;
+                else
+                {
+                if(self.racename=="TigerMan")
+                        sound (self, CHAN_BODY, "tiger/hurt1.wav",self.volume + 1, ATTN_NORM);
+/*Jman
+                else if(self.skin==1||self.oldskin==1)
+                        {
+                        if(self.zap_finished<=time)
+                                sound (self, CHAN_BODY, "jaworski/jump.wav", 1, ATTN_NORM);
+                        }
+*/
+                else if(self.racename!="Predator")
+                        if(self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
+                        {
+                                if(self.skin==12||self.oldskin==12||SolidAbove(200))
+                                        sound (self, CHAN_BODY, "xena/femjump.wav",self.volume + 1, ATTN_NORM);
+                                else 
+                                {
+                                        if(random()>0.4)
+                                            sound (self, CHAN_BODY, "xena/femjump.wav",self.volume + 1, ATTN_NORM);
+                                         else
+                                            sound (self, CHAN_BODY, "xena/femyell.wav",self.volume + 1, ATTN_NORM);
+                                         self.velocity_z = self.velocity_z + 800/self.mass;
+                                         return;
+                                }
+                        }
+                else
+                        sound (self, CHAN_BODY, "player/plyrjmp8.wav",self.volume + 1, ATTN_NORM);
+                jumpdist=self.jumphite*54/self.mass;
+                if(jumpdist<320&&!self.small)
+                        jumpdist=320;
+                self.velocity_z = self.velocity_z + jumpdist;
+                }
         }
 };
 
@@ -838,44 +1049,76 @@ WaterMove
 void() WaterMove =
 {
 //dprint (ftos(self.waterlevel));
-       if(self.skin==24&&self.pausetime<=time)
-                self.skin = self.speed;        
+       if((self.skin==24||self.skin==25)&&self.pausetime<=time)
+                self.skin = self.oldskin;        
        if (self.movetype == MOVETYPE_NOCLIP)
                return;
        if (self.health < 0)
                return;
 
-        if((self.watertype == CONTENT_WATER||self.watertype==CONTENT_SLIME) && self.waterlevel == 3 && random() < 0.1&&self.air_finished<time+12&&self.suff!=1)
+    if(self.waterlevel>0&&(self.racename=="T-800"||self.racename=="Borg")&&self.zap_finished<time&&self.radsuit_finished<time)
+    {
+        sound (self, CHAN_AUTO, "enforcer/enfstop.wav", 1, ATTN_NORM);
+        if(self.racename=="Borg")
+                {
+                T_Damage (self, world, world, 3);
+                T_RadiusDamageWater(self, self, 128,self);
+                }
+        else
+                {
+                T_Damage (self, world, world, 7);
+                T_RadiusDamageWater(self, self, 256,self);
+                }
+        self.zap_finished = time + 0.5;
+    }
+    else
+    {
+        if((self.watertype == CONTENT_WATER||self.watertype==CONTENT_SLIME) && self.waterlevel == 3 && random() < 0.1&&self.air_finished<time+12&&self.suff!=1&&self.racename!="T-800"&&self.racename!="Borg")
 	{
                 DeathBubbles(1);
 	}
 
-       if (self.waterlevel != 3&&self.suff==0)
+       if (self.waterlevel != 3&&self.suff==0&&self.air_finished<time+12)
        {
-               if (self.air_finished < time&&self.suff!=1)
-                       sound (self, CHAN_VOICE, "player/gasp2.wav", 1, ATTN_NORM);
-               else if (self.air_finished < time + 9&&self.suff!=1)
-                       sound (self, CHAN_VOICE, "player/gasp1.wav", 1, ATTN_NORM);
-               if (self.air_finished < time + 12)
-                       {
-                       self.air_finished = time + 12;
-                       self.dmg = 2;
-                       }
+                if (self.air_finished < time&&self.suff!=1)
+                        if(self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
+                                sound (self, CHAN_VOICE, "xena/gasp2.wav", 1, ATTN_NORM);
+                        else sound (self, CHAN_VOICE, "player/gasp2.wav", 1, ATTN_NORM);
+                else if(self.racename!="TigerMan")
+                        if(self.air_finished < time + 9&&self.suff!=1)
+                               if(self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
+                                      sound (self, CHAN_VOICE, "xena/gasp1.wav", 1, ATTN_NORM);
+                               else sound (self, CHAN_VOICE, "player/gasp1.wav", 1, ATTN_NORM);
+                if (self.waterbreathe||self.racename=="Bossk")
+                        self.air_finished = time + 300;
+                else if(self.racename=="TigerMan")
+                        self.air_finished = time + 6;
+                else self.air_finished = time + 12;
+                self.dmg = 2;
        }
        if ((self.air_finished < time && self.waterlevel == 3&&self.suff!=1)||self.suff==2||(self.waterlevel!=3&&self.suff==1))
        {       // drown!
                if(self.pain_finished < time)
                {
-                       self.dmg = self.dmg + 2;
-                       if (self.dmg > 15)
+                       if(self.suff==2)
+                               self.dmg=self.dmg + 10;
+                       else self.dmg = self.dmg + 2;
+                       if (self.dmg > 15&&self.suff!=2&&self.suff!=1)
                                self.dmg = 10;
+                       if(self.suff==0)
+                               self.deathtype="drown";
                        T_Damage (self, world, world, self.dmg);
                        self.pain_finished = time + 1;
                }
        }
-       if (! (self.flags & FL_WATERJUMP) && self.levitime < time)
-		self.velocity = self.velocity - 0.8*self.waterlevel*frametime*self.velocity;
-
+    }
+        if(self.small)
+//                StaySlow();
+                self.velocity = self.velocity - 0.5/self.mass*-2*frametime*self.velocity;
+        else if (!(self.flags & FL_WATERJUMP) && self.levitime < time)
+                if(self.racename=="Bossk"&&self.waterlevel==3)
+                        self.velocity = self.velocity + 2.75*(self.waterlevel - 1)*frametime*self.velocity;
+                else self.velocity = self.velocity - 0.8/self.mass*self.waterlevel*frametime*self.velocity;
        else if (self.levitime > time)
                 self.velocity = self.velocity + frametime*self.velocity;
 
@@ -890,7 +1133,7 @@ void() WaterMove =
 		return;
 	}
 
-        if (self.watertype == CONTENT_LAVA && self.firesistime < time)
+        if (self.watertype == CONTENT_LAVA && self.firesistime<time&&self.racename!="Draconian"&&self.fireresist!=1)
 	{	// do damage
 		if (self.dmgtime < time)
 		{
@@ -898,13 +1141,14 @@ void() WaterMove =
 				self.dmgtime = time + 1;
 			else
 				self.dmgtime = time + 0.2;
-
-			T_Damage (self, world, world, 10*self.waterlevel);
+                        if(self.fireresist==-1)
+                                T_Damage (self, world, world, 20*self.waterlevel);
+                        else T_Damage (self, world, world, 10*self.waterlevel);
 		}
 	}
         else if (self.watertype == CONTENT_SLIME&&self.suff!=1)
 	{	// do damage
-		if (self.dmgtime < time && self.radsuit_finished < time)
+                if (self.dmgtime < time && self.radsuit_finished < time&&self.slimeresist!=TRUE)
 		{
 			self.dmgtime = time + 1;
 			T_Damage (self, world, world, 4*self.waterlevel);
@@ -922,7 +1166,6 @@ void() WaterMove =
 			sound (self, CHAN_BODY, "player/inh2o.wav", 1, ATTN_NORM);
 		if (self.watertype == CONTENT_SLIME)
 			sound (self, CHAN_BODY, "player/slimbrn2.wav", 1, ATTN_NORM);
-
 		self.flags = self.flags + FL_INWATER;
 		self.dmgtime = 0;
 	}
@@ -949,7 +1192,9 @@ void() CheckWaterJump =
 		if (trace_fraction == 1)
 		{	// open at eye level
 			self.flags = self.flags | FL_WATERJUMP;
-			self.velocity_z = 225;
+                        if(self.racename=="Bossk")
+                                self.velocity_z = self.velocity_z + self.jumphite*60/self.mass;
+                        else self.velocity_z = self.velocity_z + self.jumphite*35/self.mass;
 			self.flags = self.flags - (self.flags & FL_JUMPRELEASED);
 			self.teleport_time = time + 2;	// safety net
 			return;
@@ -957,6 +1202,41 @@ void() CheckWaterJump =
 	}
 };
 
+void() Jetfirethink =
+{
+	if(pointcontents(self.origin)==CONTENT_SLIME||pointcontents(self.origin)==CONTENT_WATER||self.alivetime<=time)
+	{
+		self.think=SUB_Remove;
+		self.nextthink=time;
+	}
+	else
+	{
+		self.think=Jetfirethink;
+		self.nextthink=time + 0.5;
+	}
+};
+
+void(float boost) Jetfire =
+{
+	makevectors(self.angles);
+                        local entity jetfire;
+                                jetfire = spawn ();
+                                jetfire.owner = self;
+                                jetfire.movetype = MOVETYPE_FLYMISSILE;
+                                jetfire.solid = SOLID_BBOX;
+                                jetfire.classname = "fire";
+                                jetfire.effects = 8;
+                                jetfire.touch = FlameTouch;
+                                jetfire.think = Jetfirethink;
+					  jetfire.nextthink=time;
+                                jetfire.alivetime = time + 0.5;
+                                jetfire.angles='180 0 0';
+                                jetfire.avelocity='0 0 40';
+                                jetfire.velocity_z = random()* boost + boost*2;
+                                setmodel (jetfire, "progs/flame2.mdl");
+                                setsize (jetfire, '0 0 0', '0 0 0');
+					  setorigin(jetfire,self.origin - '0 0 32');
+};
 
 /*
 ================
@@ -979,16 +1259,135 @@ void() PlayerPreThink =
 	if (self.view_ofs == '0 0 0')
 		return;		// intermission or finale
 
+        if(self.skin==15&&self.allset)
+                if(random()<=0.5&&pointcontents(self.origin)!=CONTENT_SOLID)
+                        self.solid=SOLID_NOT;
+                else self.solid=SOLID_BBOX;
+                        
+        if(self.weaponmodel=="progs/hand.mdl")
+                if(self.attack_finished>=time + 0.8)
+                        self.weaponframe=1;
+                else if(self.attack_finished>=time + 0.6)
+                        self.weaponframe=2;
+                else if(self.attack_finished>=time + 0.4)
+                        self.weaponframe=3;
+                else if(self.attack_finished>=time + 0.2)
+                        self.weaponframe=2;
+                else if(self.attack_finished>time + 0.0)
+                        self.weaponframe=1;
+                else
+                {
+                self.weaponmodel=self.oldweaponmodel;
+                self.weaponframe=0;
+                }
+
+      if((self.skin>24 && self.health > 0)||(!self.allset))
+   	{
+                msg_entity = self;
+                WriteByte (MSG_ONE, 10);
+                WriteAngle (MSG_ONE, self.o_angle_x);
+                WriteAngle (MSG_ONE, self.o_angle_y);
+                WriteAngle (MSG_ONE, self.o_angle_z);
+                if(self.flags&FL_ONGROUND)
+                        self.velocity='0 0 0';
+                self.button0=0;
+                self.button2=0;
+   	}
 	makevectors (self.v_angle);		// is this still used
 
 	CheckRules ();
 	WaterMove ();
+        if((self.healthregen||(self.waterlevel==3&&pointcontents(self.origin)==CONTENT_WATER&&self.racename=="Bossk"))&&time>=self.injury_time + 1&&self.health<self.max_health&&self.health>0)
+           {
+                if(self.racename=="Borg")
+                {        
+                        if(self.ammo_cells>0)
+                        {
+                        self.health=self.health + 1;
+                        self.ammo_cells=self.ammo_cells - 0.25;
+                        }
+                }
+                else if(self.racename=="Klingon")
+                        self.health=self.health + 0.5;
+                else self.health=self.health + 1;
+                self.injury_time=time;
+           }
+
+        if((self.skin==3||self.oldskin==3)&&time>=self.zap_finished + 1&&self.armorvalue<200&&self.health>0&&self.allset)
+           {
+                self.armorvalue=self.armorvalue + 1;
+                if(self.armorvalue>150)
+                        self.armortype = 0.8;
+                else if(self.armorvalue>100)
+                        self.armortype = 0.6;
+                else if(self.armorvalue>50)
+                        self.armortype = 0.3;
+                else self.armortype=0.1;
+                self.zap_finished=time;
+           }
+
+        if(self.health>=0&&self.weakheart&&random()<0.2&&random()<0.2&&random()<0.2&&random()<0.2&&random()<0.5&&random()<0.5&&random()<0.5&&random()<0.5)
+                {
+                self.deathtype="heart";
+                self.health=0;
+                Killed(self,self,self);
+                }
+if((self.skin==13||self.oldskin==13||self.classlabel=="Jedi"||self.classlabel=="Dark Jedi")&&self.exp>100000&&self.message_time<time)
+    {
+    local entity head;
+    head = findradius(self.origin,500);
+    while(head)
+          {
+          if(head.classname=="lightsaber"&&head.controller==self&&head.inpain)
+                {
+                if(self.skin!=13&&self.oldskin!=13)
+                        {
+                        sound (head, CHAN_AUTO, "weapons/saberhup.wav", 1, ATTN_NORM);
+                        sprint(self,"Your lightsaber is near...\n");
+                        head.effects=head.effects+EF_MUZZLEFLASH;
+                        self.message_time=time + 3;
+                        }
+               }
+          else if(head.alive&&head!=self&&!head.isfeign)
+                if(head.classlabel=="Jedi"&&self.skin!=13&&self.oldskin!=13)
+                        {
+                        sprint(self,"You feel the presence of ");
+                        sprint(self,head.netname);
+                        sprint(self," here...\n");
+                        sound (head, CHAN_AUTO, "misc/talk.wav", 1, ATTN_NORM);
+                        self.message_time=time + 3;
+                        }
+                else if(head.classlabel=="Dark Jedi"&&self.skin!=13&&self.oldskin!=13)
+                        {
+                        sound (head, CHAN_AUTO, "misc/talk.wav", 1, ATTN_NORM);
+                        sprint(self,"The power of the Dark Side is strong here in ");
+                        sprint(self,head.netname);
+                        sprint(self,"...\n");
+                        self.message_time=time + 3;
+                        }
+                else if(head==self.enemy)
+                        {
+                        sound (head, CHAN_AUTO, "misc/talk.wav", 1, ATTN_NORM);
+                        if(head.classname=="player")
+                                sprint(self,head.netname);
+                        else sprint(self,head.classname);
+                        sprint(self," is near...\n");
+                        self.message_time=time + 3;
+                        }
+                head=head.chain;
+           }
+    }
+
+if(self.racename=="Predator"&&self.weapon==IT_HOME_LAUNCHER&&self.classlabel!="Assassin")
+        LaserSight();
+
         if(self.bloodloss>0)
                 {
                 self.deathtype="bleed";
                 Bleed();
                 }
-
+        if(self.racename=="T-800"||self.racename=="Borg")
+                self.exp=0;
 	if (self.waterlevel == 2)
 		CheckWaterJump ();
 
@@ -1001,15 +1400,93 @@ void() PlayerPreThink =
 	if (self.deadflag == DEAD_DYING)
 		return;	// dying, so do nothing
 
+	if(self.hover)
+		{
+			self.angles=self.v_angle;
+			makevectors(self.v_angle);
+                        if(random()<0.2)
+                                        Jetfire(-50);
+                        else particle (self.origin,v_up* -100, 242, random()*20);
+			if(self.velocity_x>-100 && self.velocity_x<100 && (self.velocity_x>20 || self.velocity_x<-20))
+				self.velocity_x=self.velocity_x*1.1;
+			if(self.velocity_x>200)
+				self.velocity_x=200;
+			else if(self.velocity_x<-200)
+				self.velocity_x= -200;
+			if(self.velocity_y>-100&&self.velocity_y<100&&
+(self.velocity_y>20 || self.velocity_y<-20))
+				self.velocity_y=self.velocity_y*1.1;
+			if(self.velocity_y>200)
+				self.velocity_y=200;
+			else if(self.velocity_y<-200)
+				self.velocity_y= -200;
+                  if(time - self.hoverstarttime >= 1)
+			{
+	                  sound (self, CHAN_AUTO, "weapons/jethover.wav", 0.5 , ATTN_NORM);
+				self.ammo_cells= self.ammo_cells - (time - self.hoverstarttime);
+				if(self.ammo_cells<0)
+					self.ammo_cells=0;
+				self.hoverstarttime = time;
+			}
+			if(self.ammo_cells<=0)
+				self.hover=FALSE;
+		}
+
 	if (self.button2)
 	{
-		PlayerJump ();
+              if(self.ghook_extended&&(self.items2&IT_GHOOK))
+                if(self.ghook_dropped||!self.ghook_attached)
+                        return;// pull enemy or retract ghook
+                else if(self.util==IT_GHOOK&&!self.small&&self.ghook_attached&&!self.ghook_dropped)
+                {
+                        PullMeUp();
+                        return;
+                }
+
+                if(self.climbing)
+                        Climb();
+                else if(self.hover)
+		    {
+                                Jetfire(-100);
+                                Jetfire(-100);
+                                Jetfire(-100);
+				if(self.jetsound_finished)
+				{
+		                  sound (self, CHAN_AUTO, "weapons/jeton.wav", 1 , ATTN_NORM);
+					self.jetsound_finished=FALSE;
+				}
+				else sound (self, CHAN_AUTO, "weapons/jethover.wav", 1 , ATTN_NORM);
+				self.hoverlevel=self.hoverlevel + 10;
+				if(self.hoverlevel>60)
+					self.hoverlevel=60;
+				self.velocity_z = self.velocity_z + 100;
+				if(self.velocity_z>3000)
+					self.velocity_z = 3000;
+		    }
+		    else
+				PlayerJump();
 	}
 	else
+	{	
+//                if(self.items2&IT_GHOOK&&self.ghook_attached&&self.ghook_extended&&(!self.flags&FL_ONGROUND))
+                if(self.dangle&&self.ghook_holdon)
+                {
+                        if(vlen(self.wallspot-self.origin)>100)
+                                r=100;
+                        else r=10;
+//                        self.velocity='0 0 0';
+                        self.velocity = (self.velocity+normalize(self.wallspot - self.origin)*r)*0.5;
+                }
+		if (self.hover&&self.velocity_z<self.hoverlevel)
+		{
+			self.jetsound_finished=TRUE;
+			self.velocity_z = self.hoverlevel;
+		}
 		self.flags = self.flags | FL_JUMPRELEASED;
+	}
 
 // teleporters can force a non-moving pause time	
-	if (time < self.pausetime)
+        if (time < self.pausetime || self.allset==FALSE)
 		self.velocity = '0 0 0';
 };
 	
@@ -1020,7 +1497,6 @@ CheckPowerups
 Check for turning off powerups
 ================
 */
-void(vector org, vector vel, float damage) SpawnBlood;
 void() CheckPowerups =
 {
 	if (self.health <= 0)
@@ -1041,8 +1517,18 @@ void() CheckPowerups =
 // sound and screen flash when items starts to run out
                 if (self.invisible_sound < time)
 		{
+                        if(self.racename=="Predator")
+                        {
+                        if(random()<0.5)
+                                sound (self, CHAN_AUTO, "predator/invis.wav", 1, ATTN_NORM);
+                        else sound (self, CHAN_AUTO, "predator/invis2.wav", 1, ATTN_NORM);
+                        self.invisible_sound = time + ((random() * 5) + 5);
+                        }
+                        else
+                        {
 			sound (self, CHAN_AUTO, "items/inv3.wav", 0.5, ATTN_IDLE);
 			self.invisible_sound = time + ((random() * 3) + 1);
+                        }
 		}
 
 
@@ -1050,9 +1536,13 @@ void() CheckPowerups =
 		{
 			if (self.invisible_time == 1)
 			{
-				sprint (self, "Ring of Shadows magic is fading\n");
+                                if(self.racename!="Predator")
+                                        {
+                                        sprint (self, "Ring of Shadows magic is fading\n");
+                                        sound (self, CHAN_AUTO, "items/inv1.wav", 1, ATTN_NORM);
+//                                        sound (self, CHAN_AUTO, "items/inv2.wav", 1, ATTN_NORM);
+                                        }
 				stuffcmd (self, "bf\n");
-				sound (self, CHAN_AUTO, "items/inv2.wav", 1, ATTN_NORM);
 				self.invisible_time = time + 1;
 			}
 			
@@ -1065,18 +1555,41 @@ void() CheckPowerups =
 
 		if (self.invisible_finished < time)
 		{	// just stopped
+                        if(self.racename=="Predator")
+                                sound (self, CHAN_AUTO, "predator/cloak2.wav", 1, ATTN_NORM);
 			self.items = self.items - IT_INVISIBILITY;
 			self.invisible_finished = 0;
 			self.invisible_time = 0;
 		}
 		
 	// use the eyes
+if(self.waterlevel!=0&&self.racename=="Predator"&&self.invisible_finished < time + 59&&self.invisible_finished>time)
+        {
+        if(self.cloakzap>10)
+                PredCloakMalFunc();
+        else if(random()<0.2)
+                if(random()<0.5)
+                        {
+                        if(self.modelindex==modelindex_eyes)
+                                Spritz("off");
+                        else if(self.modelindex==modelindex_player)                
+                                Spritz("on");
+                        }
+                 else if(random()<0.2)
+                        if(random()<0.2)
+                                        PredCloakMalFunc();
+        }
+        else
+        {
 		self.frame = 0;
 		self.modelindex = modelindex_eyes;
-	}
+        }
+     }
 	else
+                {
+                self.cloakzap = 0;
 		self.modelindex = modelindex_player;	// don't use eyes
-
+                }
 // Dog Mode
         if (self.dog_finished)
 	{
@@ -1183,7 +1696,19 @@ void() CheckPowerups =
 // suit	
 	if (self.radsuit_finished)
 	{
-		self.air_finished = time + 12;		// don't drown
+                if (self.racename=="Bossk")
+                {
+                      if(self.air_finished<time+300)
+                             self.air_finished = time + 300;
+                }
+                else if (self.racename=="TigerMan")
+                {
+                      if(self.air_finished<time+6)
+                             self.air_finished = time + 6;
+                }
+                else
+                      if(self.air_finished<time+12)
+                             self.air_finished = time + 12;          // don't drown
 
 // sound and screen flash when items starts to run out
 		if (self.radsuit_finished < time + 3)
@@ -1192,7 +1717,8 @@ void() CheckPowerups =
 			{
 				sprint (self, "Air supply in Biosuit expiring\n");
 				stuffcmd (self, "bf\n");
-				sound (self, CHAN_AUTO, "items/suit2.wav", 1, ATTN_NORM);
+//                                sound (self, CHAN_AUTO, "items/suit2.wav", 1, ATTN_NORM);
+                                sound (self, CHAN_AUTO, "items/suit.wav", 1, ATTN_NORM);
 				self.rad_time = time + 1;
 			}
 			
@@ -1208,10 +1734,48 @@ void() CheckPowerups =
 			self.items = self.items - IT_SUIT;
 			self.rad_time = 0;
 			self.radsuit_finished = 0;
-                        self.skin = self.speed;
+                        self.skin = self.oldskin;
 		}
 	}	
-
+// Shrink
+        if(self.shrink_time>time&&!self.small)
+        {
+                self.th_pain=SUB_Null;
+                DropMelee(self);
+                if(self.ducking)
+                        Duck();
+                self.velocity_z = 200;
+                if(self.flags&FL_ONGROUND)
+                        self.flags=self.flags-FL_ONGROUND;
+                player_shrink1();
+                sound (self, CHAN_AUTO, "weapons/shrink.wav", 1, ATTN_NORM);
+                self.view_ofs = '0 0 2';//too low?
+                self.small=TRUE;
+                self.mass=self.mass* 0.1;
+                self.jumphite=self.jumphite*0.1;
+                if(self.volume==0)
+                        self.volume= -0.75;
+                self.speed=self.speed*10;
+                self.max_health=self.max_health* 0.25;
+                self.impulse=0;
+                self.th_pain=player_spain;
+	}
+        else if(self.shrink_time<=time&&self.small)
+        {
+//                self.modelindex = modelindex_player;
+                sound (self, CHAN_AUTO, "weapons/grow.wav", 1, ATTN_NORM);
+                player_grow1();
+                self.view_ofs = '0 0 22';
+                self.small=FALSE;
+                self.shrink_time=0;
+                self.mass=self.mass*10;
+                if(self.volume==-0.75)
+                        self.volume= 0;
+                self.speed=self.speed*0.1;
+                self.jumphite=self.jumphite*10;
+                self.max_health=self.max_health*4;
+                self.th_pain=player_pain;
+        }
 };
 
 
@@ -1236,36 +1800,101 @@ void() PlayerPostThink =
 
 	W_WeaponFrame ();
 
-// check to see if player landed and play landing sound	
-        if ((self.jump_flag < -100) && (self.flags & FL_ONGROUND) && (self.health > 0))
+/*
+        if((self.skin==1||self.oldskin==1)&&self.zap_finished<=time)
+                if(random()<0.2&&random()<0.2&&random()<0.2&&random()<0.2&&random()<0.2)
+                        {
+                        if(random()<0.5)
+                                sound (self, CHAN_VOICE, "jaworski/piss.wav", 1, ATTN_NORM);
+                        else sound (self, CHAN_VOICE, "jaworski/terlet.wav", 1, ATTN_NORM);
+                        self.zap_finished=time+1;
+                        }
+*/
+// check to see if player landed and play landing sound
+if(self.flags & FL_ONGROUND&&self.classlabel!="Jedi"&&self.classlabel!="Dark Jedi")
+{
+self.jumpin=FALSE;
+self.scream=FALSE;
+        if (self.jump_flag < -100&&self.health > 9&&self.jump_flag<(0 - self.jumphite*54/self.mass))
 	{
+                if(self.racename=="T-800"||self.racename=="Borg"||self.skin==16||self.oldskin==16)
+                        self.jump_flag=self.jump_flag*0.5;
 //                if (self.watertype == CONTENT_WATER)
                 if(self.ducking>=time)
                         self.jump_flag=self.jump_flag+(random()*150+100);
                 if (self.waterlevel > 2)
 			sound (self, CHAN_BODY, "player/h2ojump.wav", 1, ATTN_NORM);
-                else if (self.jump_flag < -600)
+                else if (self.jump_flag<-600&&self.racename!="TigerMan")
 		{
-                        T_Damage (self, world, world,0-((self.jump_flag/3 + 175)*self.mass)); //do minimum 25 damage, multiplied by your mass 
-			sound (self, CHAN_VOICE, "player/land2.wav", 1, ATTN_NORM);
-			self.deathtype = "falling";
-		}
-                else if (self.jump_flag < -400)
+                        if(skill>1)
                         {
-                        T_Damage (self, world, world,0-((self.jump_flag/10 + 35)*self.mass)); //do minimum 5 damage, multiplied by your mass
-			sound (self, CHAN_VOICE, "player/land.wav", 1, ATTN_NORM);
 			self.deathtype = "falling";
+                        T_Damage (self, world, world,0-((self.jump_flag/4 + 75)*self.mass)); //do minimum 25 damage, multiplied by your mass
                         }
-                else if (self.jump_flag < -150)
-                        sound (self, CHAN_VOICE, "weapons/stepstop.wav", 1, ATTN_NORM);
+/*
+                        if(self.skin==1||self.oldskin==1)
+                        {
+                                if(random()<0.5)
+                                        sound (self, CHAN_VOICE, "jaworski/ow-ooo.wav", 1, ATTN_NORM);
+                                else sound (self, CHAN_VOICE, "jaworski/oo-uh.wav", 1, ATTN_NORM);
+                        }
+                        else 
+*/
+				if (self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
+                                sound (self, CHAN_VOICE, "xena/land2.wav", 1, ATTN_NORM);
+                        else sound (self, CHAN_VOICE, "player/land2.wav",self.volume + 1, ATTN_NORM);
+                }
+                else if (self.jump_flag<-400&&self.racename!="TigerMan")
+                        {
+                        if(skill>1)
+                        {
+			self.deathtype = "falling";
+                        T_Damage (self, world, world,0-((self.jump_flag/10 + 25)*self.mass)); //do minimum 5 damage, multiplied by your mass
+                        }
+/*
+                        if(self.skin==1||self.oldskin==1)
+                                sound (self, CHAN_VOICE, "jaworski/land.wav", 1, ATTN_NORM);
+                        else */
+				if (self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
+                                sound (self, CHAN_VOICE, "xena/land.wav", 1, ATTN_NORM);
+                        else sound (self, CHAN_VOICE, "player/land.wav",self.volume + 1, ATTN_NORM);
+                        }
+                else if (self.jump_flag<-150)
+                        sound (self, CHAN_BODY, "weapons/stepstop.wav",self.volume + 1, ATTN_NORM);
 		self.jump_flag = 0;
 	}
-
-        if (!(self.flags & FL_ONGROUND) && self.levitime < time)
+}
+        if (!(self.flags & FL_ONGROUND) && self.levitime < time&&self.featherfall!=TRUE&&self.climbing==FALSE&&self.dangle==FALSE&&self.hover==FALSE)
+        {
+                if(LongFall()&&!self.scream&&self.waterlevel==0&&(self.velocity_z<(0 - self.jumphite*54/self.mass))&&skill>=2)
                 {
+                        self.scream=TRUE;
+                        if(self.skin==12||self.oldskin==12||self.skin==16||self.oldskin==16)
+                                sound(self,CHAN_VOICE,"xena/femdie.wav",1,ATTN_NONE);
+                        else
+                                sound(self,CHAN_VOICE,"weapons/scream.wav",1,ATTN_NONE);
+                }
                 self.velocity_z = self.velocity_z - 3; //simulated gravity
-                if (self.velocity_z > 1000) self.velocity_z = 1000; // terminal velocity
+                if (self.velocity_z < -1000)
+                        self.velocity_z = -1000; // terminal velocity
                 self.jump_flag = self.velocity_z;// damage when hit
+                if(self.jump_flag<(0 - self.jumphite*54/self.mass)&&self.ammo_cells>0&&(self.items&IT_JETPACK)&&(!self.hover)&&self.autojet)
+                {
+                        sound (self, CHAN_AUTO, "weapons/jeton.wav", 1 , ATTN_NORM);
+			self.hoverlevel=60;
+			self.hover=TRUE;
+			self.velocity_z=self.velocity_z + 100;
+			self.hoverstarttime=time;
+                }
+        }
+        if(self.climbing==TRUE)
+                {
+//                Trying to adjust view and angles when on wall or cieling
+//                self.angles=self.v_angle=self.v_angle+'90 0 0';
+//                self.fixangle=1;
+//                self.flags=self.flags+FL_ONGROUND;
+                self.velocity='0 0 0';
+                self.velocity = normalize(self.wallspot - self.origin)*500;
                 }
 
 	CheckPowerups ();
@@ -1281,6 +1910,9 @@ called when a player connects to a server
 */
 void() ClientConnect =
 {
+//        sprint(self,"Welcome to Ultimate Quake, version 1.032\n");
+//        sprint(self,"Choose your Race and Class...\n");
+
 	bprint (self.netname);
 	bprint (" entered the game\n");
 	
@@ -1324,117 +1956,206 @@ void(entity targ, entity attacker) ClientObituary =
 {
 	local	float rnum;
 	local	string deathstring, deathstring2;
-	rnum = random();
+        local   entity killer;
+	  if (attacker.classname == "player")
+        	killer=attacker;
+        else if(attacker.charmed)
+                killer=attacker.controller;
+        else killer=attacker;
 
-		if (attacker.classname == "teledeath")
+	rnum = random();
+                if (killer.classname == "teledeath")
 		{
 			bprint (targ.netname);
 			bprint (" was telefragged by ");
-			bprint (attacker.owner.netname);
-			bprint ("\n");
+                        bprint (killer.owner.netname);
+                        bprint ("!\n");
 
-			attacker.owner.frags = attacker.owner.frags + 1;
+                        killer.owner.frags = killer.owner.frags + 1;
 			return;
 		}
 
-		if (attacker.classname == "teledeath2")
+                if (killer.classname == "teledeath2")
 		{
 			bprint ("Satan's power deflects ");
 			bprint (targ.netname);
-			bprint ("'s telefrag\n");
+                        bprint ("'s telefrag!\n");
 
 			targ.frags = targ.frags - 1;
 			return;
 		}
 
-		if (attacker.classname == "player")
-		{
-                        if (targ == attacker)
-			{
-				// killed self
-				attacker.frags = attacker.frags - 1;
-				bprint (targ.netname);
+                if (killer.classname == "player"||killer.charmed)
+                {
+                        if (targ == killer)
+                        {
+                                // killer self
+                                  killer.frags = killer.frags - 1;
+                                  bprint (targ.netname);
 				
-                                if (targ.weapon == 64)
-                                {
-                                if (targ.waterlevel > 1)
-                                        {
+                                  if (targ.deathtype=="heart")
+                                  {
+                                          bprint (" had a heart attack!\n");
+                                          return;
+                                  }
+                                  else if (targ.deathtype=="growsquish")
+                                  {
+                                          bprint (" got too big for his britches!\n");
+                                          return;
+                                  }
+                                  else if (targ.onfire)
+                                  {
+                                        bprint (" was burnt to a crisp!\n");
+                                        return;
+                                  }
+
+                                  if (targ.weapon == 64)
+                                  {
+                                          if (targ.waterlevel > 1)
+                                          {
                                                 bprint (" discharges into the water.\n");
                                                 return;
-                                        }
-                                }
-                                if (targ.weapon > 15 && targ.weapon < 32)
-					bprint (" tries to put the pin back in\n");
-                                else if (rnum>0.4)
-					bprint (" becomes bored with life\n");
-				else
-					bprint (" checks if his weapon is loaded\n");
-				return;
-			}
-			else
-			{
-				attacker.frags = attacker.frags + 1;
+                                          }
+                                   }
+                                   if (targ.weapon > 15 && targ.weapon < 32)
+                                        bprint (" tries to put the pin back in!\n");
+                                   else if (rnum>0.4)
+                                        bprint (" becomes bored with life!\n");
+                                   else
+                                        bprint (" checks if his weapon is loaded!\n");
+                                   return;
+                        }
+                        else
+                        {
+                                if(killer.dishonor)
+                                       killer.frags = killer.frags - 1;
+                                else killer.frags = killer.frags + 1;
 
-				rnum = attacker.weapon;
-				if (rnum == IT_AXE)
+                                rnum = killer.weapon;
+                                if(targ.small)
+                                {
+                                        deathstring = " was squished by ";
+                                        deathstring2 = " the giant!\n";
+                                }
+                                else if(targ.deathtype=="charmed")
+                                {
+                                        deathstring = " was murdered by ";
+                                        deathstring2 = "'s monster!\n";
+                                }
+                                else if(targ.deathtype=="spell")
+                                {
+                                        deathstring = " was slain by ";
+                                        deathstring2 = "'s magic!\n";
+                                }
+                                else if(targ.deathtype=="sentinel")
+                                {
+                                        deathstring = " was tracked down by ";
+                                        deathstring2 = "'s sentinel!\n";
+                                }
+                                else if(targ.deathtype=="tripmine")
+                                {
+                                        deathstring = " tripped up on ";
+                                        deathstring2 = "'s tripmine!\n";
+                                }
+                                else if(targ.deathtype=="betty")
+                                {
+                                        deathstring = " bounced on ";
+                                        deathstring2 = "'s betty!\n";
+                                }
+                                else if(targ.deathtype=="lightsaber")
+                                {
+                                        deathstring = " was cut to pieces by ";
+                                        deathstring2 = "'s lightsaber!\n";
+                                }
+                                else if(targ.deathtype=="chakram")
+                                {
+                                        deathstring = " was whacked by ";
+                                        deathstring2 = "'s chakram!\n";
+                                }
+                                else if(targ.deathtype=="disc")
+                                {
+                                        deathstring = " was sliced and diced by ";
+                                        deathstring2 = "'s disc!\n";
+                                }
+                                else if(targ.deathtype=="homerocket"||targ.deathtype=="homespread")
+                                {
+                                        deathstring = " was sought and destroyed by ";
+                                        deathstring2 = "'s rocket!\n";
+                                }
+                                else if(targ.deathtype=="plasmabolt")
+                                {
+                                        deathstring = " was jacked up by ";
+                                        deathstring2 = "'s plasmabolt!\n";
+                                }
+                                else if(targ.deathtype=="zap")
+                                {
+                                        deathstring = " was electrocuted by ";
+                                        deathstring2 = "!\n";
+                                }
+                                else if (rnum == IT_AXE)
 				{
-					deathstring = " was ax-murdered by ";
-					deathstring2 = "\n";
+                                        deathstring = " was hacked to bits by ";
+                                        deathstring2 = "!\n";
 				}
-				if (rnum == IT_SHOTGUN)
+                                else if (rnum == IT_SHOTGUN)
 				{
 					deathstring = " chewed on ";
-					deathstring2 = "'s boomstick\n";
+                                        deathstring2 = "'s boomstick!\n";
 				}
-                                if (rnum == IT_SNIPERGUN)
+                                else if (rnum == IT_FLAMETHROWER||rnum == IT_FIREBALLGUN)
+				{
+                                        deathstring = " was toasted and roasted by ";
+                                        deathstring2 = "!\n";
+				}
+                                else if (rnum == IT_SNIPERGUN)
 				{
                                         deathstring = " was sniped by ";
                                         deathstring2 = "!\n";
 				}
-				if (rnum == IT_SUPER_SHOTGUN)
+                                else if (rnum == IT_SUPER_SHOTGUN)
                                 {
 					deathstring = " ate 2 loads of ";
-					deathstring2 = "'s buckshot\n";
+                                        deathstring2 = "'s buckshot!\n";
 				}
-				if (rnum == IT_NAILGUN)
+                                else if (rnum == IT_NAILGUN)
 				{
 					deathstring = " was nailed by ";
-					deathstring2 = "\n";
+                                        deathstring2 = "!\n";
 				}
-				if (rnum == IT_SUPER_NAILGUN)
+                                else if (rnum == IT_SUPER_NAILGUN)
 				{
 					deathstring = " was punctured by ";
-					deathstring2 = "\n";
+                                        deathstring2 = "!\n";
 				}
-                                if (rnum > 15 && rnum < 32)
+                                else if (rnum > 15 && rnum < 32)
 				{
 					deathstring = " eats ";
-					deathstring2 = "'s pineapple\n";
+                                        deathstring2 = "'s pineapple!\n";
 					if (targ.health < -40)
 					{
 						deathstring = " was gibbed by ";
-						deathstring2 = "'s grenade\n";
+                                                deathstring2 = "'s grenade!\n";
 					}
 				}
-                                if (rnum > 31 && rnum < 64)
+                                else if (rnum > 31 && rnum < 64)
 				{
 					deathstring = " rides ";
-					deathstring2 = "'s rocket\n";
+                                        deathstring2 = "'s rocket!\n";
 					if (targ.health < -40)
 					{
 						deathstring = " was gibbed by ";
-						deathstring2 = "'s rocket\n" ;
+                                                deathstring2 = "'s rocket!\n" ;
 					}
 				}
-				if (rnum == IT_LIGHTNING)
+                                else if (rnum == IT_LIGHTNING)
 				{
 					deathstring = " accepts ";
-					if (attacker.waterlevel > 1)
-						deathstring2 = "'s discharge\n";
+                                        if (killer.waterlevel > 1)
+                                                deathstring2 = "'s discharge!\n";
 					else
-						deathstring2 = "'s shaft\n";
+                                                deathstring2 = "'s shaft!\n";
 				}
-                                if (rnum == IT_LASERGUN)
+                                else if (rnum == IT_LASERGUN)
 				{
                                         deathstring = " got zapped by ";
                                         deathstring2 = "!\n";
@@ -1442,127 +2163,125 @@ void(entity targ, entity attacker) ClientObituary =
 
 				bprint (targ.netname);
 				bprint (deathstring);
-				bprint (attacker.netname);
+                                bprint (killer.netname);
 				bprint (deathstring2);
 			}
 			return;
 		}
 		else
 		{
-			targ.frags = targ.frags - 1;		// killed self
+                        targ.frags = targ.frags - 1;  // killer self
 			rnum = targ.watertype;
 
 			bprint (targ.netname);
-			if (rnum == -3)
+                        if (rnum == -3||targ.deathtype=="drown")
 			{
 				if (random() < 0.5)
-					bprint (" sleeps with the fishes\n");
+                                        bprint (" sleeps with the fishes!\n");
 				else
-					bprint (" sucks it down\n");
+                                        bprint (" sucks it down!\n");
 				return;
 			}
-			else if (rnum == -4)
+                        else if (rnum == -4&&targ.slimeresist!=TRUE)
 			{
 				if (random() < 0.5)
-					bprint (" gulped a load of slime\n");
+                                        bprint (" gulped a load of slime!\n");
 				else
-					bprint (" can't exist on slime alone\n");
+                                        bprint (" can't exist on slime alone!\n");
 				return;
 			}
-                        else if (rnum == -5&&targ.firesistime<=time)
+                        else if (rnum == -5&&targ.firesistime<=time&&targ.fireresist!=1&&targ.racename!="Draconian")
 			{
 				if (targ.health < -15)
 				{
-					bprint (" burst into flames\n");
+                                        bprint (" burst into flames!\n");
 					return;
 				}
 				if (random() < 0.5)
-					bprint (" turned into hot slag\n");
+                                        bprint (" turned into hot slag!\n");
 				else
-					bprint (" visits the Volcano God\n");
+                                        bprint (" visits the Volcano God!\n");
 				return;
 			}
 
-			if (attacker.flags & FL_MONSTER)
+                        if (killer.flags & FL_MONSTER)
 			{
-                                if (attacker.classname == "grunt")//"monster_army")
-					bprint (" was shot by a Grunt\n");
-                                if (attacker.classname == "fiend")//"monster_demon1")
-					bprint (" was eviscerated by a Fiend\n");
-                                if (attacker.classname == "rottweiler")//"monster_dog")
-					bprint (" was mauled by a Rottweiler\n");
-                                if (attacker.classname == "enforcer")//"monster_enforcer")
-					bprint (" was blasted by an Enforcer\n");
-                                if (attacker.classname == "rotfish")//"monster_fish")
-					bprint (" was fed to the Rotfish\n");
-                                if (attacker.classname == "hell knight")//"monster_hell_knight")
-					bprint (" was slain by a Death Knight\n");
-                                if (attacker.classname == "knight")//"monster_knight")
-					bprint (" was slashed by a Knight\n");
-                                if (attacker.classname == "ogre")//"monster_ogre")
-					bprint (" was destroyed by an Ogre\n");
-                                if (attacker.classname == "monster_oldone")
-					bprint (" became one with Shub-Niggurath\n");
-                                if (attacker.classname == "vore")//"monster_shalrath")
-					bprint (" was exploded by a Vore\n");
-                                if (attacker.classname == "shambler")//"monster_shambler")
-					bprint (" was smashed by a Shambler\n");
-                                if (attacker.classname == "spawn")//"monster_tarbaby")
-					bprint (" was slimed by a Spawn\n");
-//                                if (attacker.classname == "vomitus")//"monster_vomit")
+                                if (killer.classname == "Borg")
+                                        bprint (" was assimilated by the Borg!\n");
+                                if (killer.classname == "grunt")//"monster_army")
+                                        bprint (" was shot by a Grunt!\n");
+                                if (killer.classname == "fiend")//"monster_demon1")
+                                        bprint (" was eviscerated by a Fiend!\n");
+                                if (killer.classname == "rottweiler")//"monster_dog")
+                                        bprint (" was mauled by a Rottweiler!\n");
+                                if (killer.classname == "enforcer")//"monster_enforcer")
+                                        bprint (" was blasted by an Enforcer!\n");
+                                if (killer.classname == "rotfish")//"monster_fish")
+                                        bprint (" was fed to the Rotfish!\n");
+                                if (killer.classname == "hell knight")//"monster_hell_knight")
+                                        bprint (" was slain by a Death Knight!\n");
+                                if (killer.classname == "knight")//"monster_knight")
+                                        bprint (" was slashed by a Knight!\n");
+                                if (killer.classname == "ogre")//"monster_ogre")
+                                        bprint (" was destroyed by an Ogre!\n");
+                                if (killer.classname == "monster_oldone")
+                                        bprint (" became one with Shub-Niggurath!\n");
+                                if (killer.classname == "vore")//"monster_shalrath")
+                                        bprint (" was obliterated by a Vore!\n");
+                                if (killer.classname == "shambler")//"monster_shambler")
+                                        bprint (" was executed by a Shambler!\n");
+                                if (killer.classname == "spawn")//"monster_tarbaby")
+                                        bprint (" was blown to bits by a Spawn!\n");
+//                                if (killer.classname == "vomitus")//"monster_vomit")
 //                                        bprint (" was vomited on by a Vomitus\n");
-                                if (attacker.classname == "scrag")//"monster_wizard")
-                                        bprint (" was fragged by a Scrag\n");
-                                if (attacker.classname == "zombie")//"monster_zombie")
-					bprint (" joins the Zombies\n");
+                                if (killer.classname == "scrag")//"monster_wizard")
+                                        bprint (" was fragged by a Scrag!\n");
+                                if (killer.classname == "zombie")//"monster_zombie")
+                                        bprint (" joins the Zombies!\n");
 
 				return;
 			}
-			if (attacker.classname == "explo_box")
+                        if (killer.classname == "explo_box")
 			{
-				bprint (" blew up\n");
+                                bprint (" was blown to smithereens!\n");
 				return;
 			}
-			if (attacker.solid == SOLID_BSP && attacker != world)
+                        if (killer.solid == SOLID_BSP && killer != world)
 			{	
-				bprint (" was squished\n");
-				return;
-			}
-                        if (attacker.classname == "spell")
-			{
-				targ.deathtype = "";
-                                bprint (" was destroyed by magic\n");
+                                bprint (" was squished!\n");
 				return;
 			}
 			if (targ.deathtype == "falling")
 			{
-				targ.deathtype = "";
-				bprint (" fell to his death\n");
+                                targ.deathtype = "";
+                                if(self.skin==12||self.skin==16||self.oldskin==12||self.oldskin==16)
+                                        bprint (" fell to her death!\n");
+                                else bprint (" fell to his death!\n");
 				return;
 			}
                         if(targ.deathtype == "bleed")
 			{
-				targ.deathtype = "";
-                                bprint (" bled to death\n");
+                                targ.deathtype = "";
+                                bprint (" bled to death!\n");
 				return;
 			}
-			if (attacker.classname == "trap_shooter" || attacker.classname == "trap_spikeshooter")
+                        if (killer.classname == "trap_shooter" || killer.classname == "trap_spikeshooter")
 			{
-				bprint (" was spiked\n");
+                                bprint (" was spiked!\n");
 				return;
 			}
-			if (attacker.classname == "fireball")
+                        if (killer.classname == "fireball")
 			{
-				bprint (" ate a lavaball\n");
+                                bprint (" ate a lavaball!\n");
 				return;
 			}
-			if (attacker.classname == "trigger_changelevel")
+                        if (killer.classname == "trigger_changelevel")
 			{
-				bprint (" tried to leave\n");
+                                bprint (" tried to leave!\n");
 				return;
 			}
 
-			bprint (" died\n");
+                        bprint (" died!\n");
 		}
 };
 

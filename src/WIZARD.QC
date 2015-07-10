@@ -44,7 +44,7 @@ if self.enemy maintains it's current velocity
 0.1 is moderately accurate, 0.0 is totally accurate
 =============
 */
-void(entity missile, float mspeed, float accuracy) LaunchMissile =
+void(entity missile, float mspeed, float acc) LaunchMissile =
 {
 	local	vector	vec, move;
 	local	float	fly;
@@ -65,7 +65,7 @@ void(entity missile, float mspeed, float accuracy) LaunchMissile =
 	vec = vec + move * fly;
 	
 	vec = normalize(vec);
-	vec = vec + accuracy*v_up*(random()- 0.5) + accuracy*v_right*(random()- 0.5);
+        vec = vec + acc*v_up*(random()- 0.5) + acc*v_right*(random()- 0.5);
 	
         missile.speed = 400;
 	missile.velocity = vec * mspeed;
@@ -255,7 +255,9 @@ void() wiz_die =
 // check for gib
 	if (self.health < -40)
 	{
-        self.enemy.exp = self.enemy.exp + (27 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (27 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (27 - self.health)*skill;
         self.netname = "progs/h_wizard.mdl";
         CorpseDie();
         return;
@@ -277,7 +279,7 @@ void(entity attacker, float damage) Wiz_Pain =
 
 void() Wiz_Missile =
 {
-        if (self.silencetime > time)
+        if (self.alivetime > time)
                 return;
 	wiz_fast1();
 };
@@ -291,13 +293,16 @@ void() monster_wizard =
 		remove(self);
 		return;
 	}
-	self.solid = SOLID_SLIDEBOX;
+        self.solid = SOLID_SLIDEBOX;
 	self.movetype = MOVETYPE_STEP;
 
 	setmodel (self, "progs/wizard.mdl");
 
 	setsize (self, '-16 -16 -24', '16 16 40');
-	self.health = 80;
+	if(skill==3)
+		self.health = 160;
+	else	self.health = 80;
+	self.mass = 0.75;
         self.alive = TRUE;
         self.classname ="scrag";
 

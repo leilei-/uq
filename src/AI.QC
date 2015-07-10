@@ -114,8 +114,8 @@ local entity	temp;
 	self = other;
 	other = temp;
 
-        if (self.classname == "ogre")
-		sound (self, CHAN_VOICE, "ogre/ogdrag.wav", 1, ATTN_IDLE);// play chainsaw drag sound
+//        if (self.classname == "ogre")
+//                sound (self, CHAN_VOICE, "ogre/ogdrag.wav", 1, ATTN_IDLE);// play chainsaw drag sound
 
 //dprint ("t_movetarget\n");
 	self.goalentity = self.movetarget = find (world, targetname, other.target);
@@ -183,6 +183,26 @@ float (entity targ) visible =
 	return FALSE;
 };
 
+float (entity targ, entity forent) visible2ent =
+{
+	local vector	spot1, spot2;
+	
+        if(forent.classname=="ghook")
+        {
+                makevectors(forent.angles);
+                spot1 = forent.origin - v_forward*8;
+        }
+        else spot1 = forent.origin + forent.view_ofs;
+	spot2 = targ.origin + targ.view_ofs;
+        traceline (spot1, spot2, TRUE, forent);   // see through other monsters
+	
+        if (trace_inopen && trace_inwater&&forent.classname!="ghook")
+		return FALSE;			// sight line crossed contents
+
+	if (trace_fraction == 1)
+		return TRUE;
+	return FALSE;
+};
 
 /*
 =============
@@ -194,13 +214,17 @@ returns 1 if the entity is in front (in sight) of self
 float(entity targ) infront =
 {
 	local vector	vec;
-	local float		dot;
-	
-	makevectors (self.angles);
-	vec = normalize (targ.origin - self.origin);
+        local float     accept,dot;
+
+        makevectors (self.angles);
+        vec = normalize (targ.origin - self.origin);
 	dot = vec * v_forward;
 	
-	if ( dot > 0.3)
+        if(self.classname=="homerocket"||self.classname=="spreadhome"||self.classname=="plasmabolt")
+                accept=0.7;
+        else accept = 0.3;
+
+        if ( dot > accept)
 	{
 		return TRUE;
 	}
@@ -218,17 +242,16 @@ Turns towards self.ideal_yaw at self.yaw_speed
 Sets the global variable current_yaw
 Called every 0.1 sec by monsters
 ============
-*/
-/*
 
-void() ChangeYaw =
+
+void(entity actor) ChangeYaw2 =
 {
 	local float		ideal, move;
 
-//current_yaw = self.ideal_yaw;
+//current_yaw = actor.ideal_yaw;
 // mod down the current angle
-	current_yaw = anglemod( self.angles_y );
-	ideal = self.ideal_yaw;
+        current_yaw = anglemod( actor.angles_y );
+        ideal = actor.ideal_yaw;
 	
 	if (current_yaw == ideal)
 		return;
@@ -247,22 +270,21 @@ void() ChangeYaw =
 		
 	if (move > 0)
 	{
-		if (move > self.yaw_speed)
-			move = self.yaw_speed;
+                if (move > actor.yaw_speed)
+                        move = actor.yaw_speed;
 	}
 	else
 	{
-		if (move < 0-self.yaw_speed )
-			move = 0-self.yaw_speed;
+                if (move < 0-actor.yaw_speed )
+                        move = 0-actor.yaw_speed;
 	}
 
-	current_yaw = anglemod (current_yaw + move);
+        current_yaw = anglemod (current_yaw + move);
 
-	self.angles_y = current_yaw;
+        actor.angles_y = current_yaw;
 };
 
 */
-
 
 //============================================================================
 
@@ -272,7 +294,8 @@ void() HuntTarget =
 	self.think = self.th_run;
 	self.ideal_yaw = vectoyaw(self.enemy.origin - self.origin);
 	self.nextthink = time + 0.1;
-	SUB_AttackFinished (1);	// wait a while before first attack
+        if(self.classname!="Borg")
+                SUB_AttackFinished (1); // wait a while before first attack
 };
         
 void() SightSound =
@@ -367,15 +390,24 @@ if (self.charmed)
 //               FoundTarget();
 //               return TRUE;
 //               }
-        if (self.enemy == world && self.classname != "spell")
-                self.follow = TRUE;
-        else self.follow = FALSE;
+          self.follow=FALSE;
+//        if (self.enemy == world && self.classname != "spell")
+//                self.follow = TRUE;
+//        else self.follow = FALSE;
         head = findradius (self.origin, 1000);
                 while(head)
                 {
-                        if((head != self.controller || self.follow) && (head != self) && (head.alive) && (head != world) && (head != self) && (head.owner!=self)&&(!head.isfeign))
+                        if((head != self.controller || self.follow) &&
+                           (head.alive) &&
+                           (head != world) &&
+                           (head != self) &&
+                           (head.owner!=self)&&
+                           (!head.isfeign) &&
+                           (head.inpain!=2) &&
+                           (head.controller!=self.controller))
                         {
-                        if ((!head.alive) && head.owner == self.owner)
+                        if ((!head.alive) &&
+                             head.owner == self.owner)
                                         {
                                         if (self.classname == "spell")
                                                 self.enemy = world;
@@ -384,34 +416,46 @@ if (self.charmed)
                                         return FALSE;
                                         }
                         r = range(head);
-                        if ((range(head) != RANGE_FAR) && (visible (head)))
+                        if (/*(range(head) != RANGE_FAR) &&*/ (visible (head)))
                                 {
                                 self.enemy = head;
+/*
                                 if(self.enemy.controller == self.controller)
                                    {
                                    skip = FALSE;
-                                   if (self.enemy.enemy != world && self.enemy.enemy.alive && self.enemy.enemy != self.controller && self.enemy.enemy.controller != self.controller)
+                                   if (self.enemy.enemy != world &&
+                                       self.enemy.enemy.alive &&
+//                                       self.enemy.enemy != self.controller &&
+                                       self.enemy.enemy.controller != self.controller)
                                         self.enemy = self.enemy.enemy;
                                    else skip = TRUE;
                                    }
                                 if (skip == FALSE)
                                 {
+*/
                                 FoundTarget();
                                 return TRUE;
-                                }
+//                                }
                                 }
                         }
                         head = head.chain;
                 }
+        if(self.enemy==self.controller.lightning&&self.classname=="Borg")
+                return;
         if (self.classname == "spell")
                self.enemy = world;
         else
         {
         self.enemy = self.controller;
         self.oldenemy = self.controller;
+        self.follow=TRUE;
+        self.movetarget=self.controller;
+        self.goalentity=self.controller;
         }
         return;
 }
+else if (sight_entity.charmed)
+        client=sight_entity;
 else if (sight_entity_time >= time - 0.1 && !(self.spawnflags & 3))
 	{
                 client = sight_entity;
@@ -464,7 +508,9 @@ else
 // got one
 //
         self.enemy = client;
-	if (self.enemy.classname != "player")
+//        if(self.enemy.classname=="gplayer")
+//                self.enemy=self.enemy.clone;
+        if (self.enemy.classname != "player"&&(!self.enemy.charmed))
 	{
 		self.enemy = self.enemy.enemy;
 		if (self.enemy.classname != "player")
@@ -483,11 +529,13 @@ else
 void(float dist) ai_forward =
 {
 	walkmove (self.angles_y, dist);
+	self.running=TRUE;
 };
 
 void(float dist) ai_back =
 {
-	walkmove ( (self.angles_y+180), dist);
+	walkmove (self.angles_y + 180, dist);
+	self.running=TRUE;
 };
 
 
@@ -510,7 +558,8 @@ if (random () < 0.2)
 	away = anglemod (vectoyaw (self.origin - self.enemy.origin)
 	+ 180*(random()- 0.5) );
 	walkmove (away, dist);
-        }
+	self.running=TRUE;
+	}
 };
 
 /*
@@ -523,6 +572,7 @@ stagger back a bit
 void(float dist) ai_painforward =
 {
 	walkmove (self.ideal_yaw, dist);
+	self.running=TRUE;
 };
 
 /*
@@ -535,14 +585,7 @@ The monster is walking it's beat
 void(float dist) ai_walk =
 {
 
-        if (pointcontents(self.origin+'0 0 24') < -2 && pointcontents(self.origin+'0 0 24') > -5)
-              if (random () < 0.1)
-              DeathBubbles (1);
-
-        if (self.watertype == CONTENT_LAVA)
-                       T_Damage (self,world, self.enemy, 5);
-        else if (self.watertype == CONTENT_SLIME)
-                       T_Damage (self,world, self.enemy, 1);
+	  MonsterWaterMove();
 
         if(self.bloodloss>0)
                 Bleed();
@@ -552,6 +595,9 @@ void(float dist) ai_walk =
 	if (FindTarget ())
 		return;
 
+        if(self.movetype==MOVETYPE_BOUNCE)
+                return;
+	self.running=TRUE;
 	movetogoal (dist);
 };
 
@@ -565,23 +611,21 @@ The monster is staying in one place for a while, with slight angle turns
 */
 void() ai_stand =
 {
-        if (pointcontents(self.origin+'0 0 24') < -2 && pointcontents(self.origin+'0 0 24') > -5)
-              if (random () < 0.1)
-              DeathBubbles (1);
-
-        if (self.watertype == CONTENT_LAVA)
-                       T_Damage (self,world, self.enemy, 5);
-        else if (self.watertype == CONTENT_SLIME)
-                       T_Damage (self,world, self.enemy, 1);
+	  self.running=FALSE;
+	  MonsterWaterMove();
 
         if(self.bloodloss>0)
                 Bleed();
 
 	if (FindTarget ())
+	{
+    		self.running=TRUE;
 		return;
+	}
 	
         if (time > self.pausetime)
 	{
+	  	self.running=TRUE;
 		self.th_walk ();
 		return;
 	}
@@ -664,11 +708,13 @@ Turn and close until within an angle to launch a melee attack
 */
 void() ai_run_melee =
 {
+	  MonsterWaterMove();
 	self.ideal_yaw = enemy_yaw;
 	ChangeYaw ();
 
 	if (FacingIdeal())
 	{
+		self.running=TRUE;
 		self.th_melee ();
 		self.attack_state = AS_STRAIGHT;
 	}
@@ -684,10 +730,12 @@ Turn in place until within an angle to launch a missile attack
 */
 void() ai_run_missile =
 {
+	  MonsterWaterMove();
 	self.ideal_yaw = enemy_yaw;
 	ChangeYaw ();
 	if (FacingIdeal())
 	{
+		self.running=TRUE;
 		self.th_missile ();
 		self.attack_state = AS_STRAIGHT;
 	}
@@ -704,19 +752,25 @@ Strafe sideways, but stay at aproximately the same range
 void() ai_run_slide =
 {
 	local float	ofs;
-	
+	  MonsterWaterMove();
 	self.ideal_yaw = enemy_yaw;
+        if(self.movetype==MOVETYPE_BOUNCE)
+                return;
 	ChangeYaw ();
 	if (self.lefty)
 		ofs = 90;
 	else
 		ofs = -90;
 	
-	if (walkmove (self.ideal_yaw + ofs, movedist))
+	if(walkmove (self.ideal_yaw + ofs, movedist))
+	{
+		self.running=TRUE;
 		return;
-		
+	}
+
 	self.lefty = 1 - self.lefty;
 	
+	self.running=TRUE;
 	walkmove (self.ideal_yaw - ofs, movedist);
 };
 
@@ -734,25 +788,16 @@ void(float dist) ai_run =
 	local	float	axis;
 	local	float	direct, ang_rint, ang_floor, ang_ceil;
 
-        if (self.skin!=0)
-                self.skin = 0;
+        if (self.skin==1||self.skin==2)
+                self.skin = self.oldskin;
 
-        if (pointcontents(self.origin+'0 0 24') < -2 && pointcontents(self.origin+'0 0 24') > -5&&self.classname!="rotfish")
-              {
-              self.origin_z = self.origin_z + 2;
-              if (random () < 0.1)
-                      DeathBubbles (1);
-              }
+	  MonsterWaterMove();
 
-        if (self.watertype == CONTENT_LAVA)
-                       T_Damage (self,world, self.enemy, 5);
-        else if (self.watertype == CONTENT_SLIME)
-                       T_Damage (self,world, self.enemy, 1);
 
         if(self.bloodloss>0)
                 Bleed();
 
-        if ((self.charmed) && (self.enemy == self.controller||self.enemy==world))
+        if ((self.charmed) && (self.enemy == self.controller||self.enemy==world||self.enemy==self.controller.lightning))
                 {
                 if (FindTarget())
                 return;
@@ -760,17 +805,26 @@ void(float dist) ai_run =
 
         movedist = dist/(self.mass + 1); // to make increase mass slow down monsters
 // see if the enemy is dead
-        if (((self.enemy.health <= 0 || (!self.enemy.alive))&&self.enemy.classname!="holo")||self.enemy.isfeign)
+if(self.frommonname=="Advance"&&vlen(self.origin-self.controller.lightning.origin)<48)
+              CheckBorgCommands(self);
+if(self.enemy!=self.controller.lightning)
+        if (((self.enemy.health <= 0 ||(!self.enemy.alive) ) && self.enemy.classname!="holo") ||
+              self.enemy.isfeign||
+              self.enemy.deadflag==DEAD_DEAD)
         	{
 		self.enemy = world;
+                if(self.classname=="Borg"&&self.frommonname!="")
+                        CheckBorgCommands(self);
 	// FIXME: look all around for other targets
-                if (self.oldenemy.health > 0 && self.oldenemy.alive)
+                else if (self.oldenemy.health > 0 && self.oldenemy.alive)
 		{
 			self.enemy = self.oldenemy;
 			HuntTarget ();
 		}
 		else
 		{
+                        if(self.charmed)
+                                FindTarget();
 			if (self.movetarget)
 				self.th_walk ();
 			else
@@ -778,7 +832,6 @@ void(float dist) ai_run =
 			return;
 		}
 	}
-
 	self.show_hostile = time + 1;		// wake up other monsters
 
 // check knowledge of enemy
@@ -819,7 +872,9 @@ void(float dist) ai_run =
 		return;
 	}
 		
+        if(self.movetype==MOVETYPE_BOUNCE)
+                return;
 // head straight in
+        self.running=TRUE;
 	movetogoal (dist);		// done in C code...
 };
-

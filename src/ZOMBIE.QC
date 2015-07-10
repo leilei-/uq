@@ -54,7 +54,6 @@ float	SPAWN_CRUCIFIED	= 1;
 
 //=============================================================================
 
-.float inpain;
 
 void() zombie_stand1	=[	$stand1,		zombie_stand2	] {ai_stand();};
 void() zombie_stand2	=[	$stand2,		zombie_stand3	] {ai_stand();};
@@ -105,7 +104,7 @@ if (random() < 0.2)
 	sound (self, CHAN_VOICE, "zombie/z_idle.wav", 1, ATTN_IDLE);
 };
 
-void() zombie_run1              =[      $run1,          zombie_run2     ] {self.isfeign=FALSE;ai_run(1);self.inpain = 0;};
+void() zombie_run1              =[      $run1,          zombie_run2     ] {self.isfeign=FALSE;ai_run(1);if(self.movetype!=MOVETYPE_NONE)self.inpain = 0;};
 void() zombie_run2		=[	$run2,		zombie_run3	] {ai_run(1);};
 void() zombie_run3		=[	$run3,		zombie_run4	] {ai_run(0);};
 void() zombie_run4		=[	$run4,		zombie_run5	] {ai_run(1);};
@@ -394,12 +393,17 @@ void() zombie_paine30	=[	$paine30,	zombie_run1		] {};
 
 void() zombie_die =
 {
-        if(self.enemy.classname=="player")self.enemy.exp = self.enemy.exp + (20 - self.health)*skill;
+     if(self.enemy.classname=="player")
+        {
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (20 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (20 - self.health)*skill;
+        }
 	sound (self, CHAN_VOICE, "zombie/z_gib.wav", 1, ATTN_NORM);
-	ThrowGib ("progs/gib1.mdl", self.health*3);
-        ThrowGib ("progs/gib2.mdl", self.health*2);
-	ThrowGib ("progs/gib3.mdl", self.health*3);
         self.netname = "progs/h_zombie.mdl";
+//        ThrowGib ("progs/gib1.mdl", self.health*3);
+//        ThrowGib ("progs/gib2.mdl", self.health*2);
+//        ThrowGib ("progs/gib3.mdl", self.health*3);
         CorpseDie();
         return;
 };
@@ -429,7 +433,15 @@ void(entity attacker, float take) zombie_pain =
 
 	self.health = 60;		// allways reset health
 
-	if (take < 9)
+        if(self.onfire)
+                self.max_health=self.max_health-self.onfire;
+        if(self.max_health<0)
+                {
+                self.health=self.max_health;
+                Killed(self,self.enemy,self.enemy);
+                }
+
+        if (take < 9)
 		return;				// totally ignore
 
 	if (self.inpain == 2)
@@ -501,8 +513,8 @@ If crucified, stick the bounding box 12 pixels back into a wall to look right.
 	precache_sound ("zombie/z_pain.wav");
 	precache_sound ("zombie/z_pain1.wav");
 	precache_sound ("zombie/z_fall.wav");
-	precache_sound ("zombie/z_miss.wav");
-	precache_sound ("zombie/z_hit.wav");
+//        precache_sound ("zombie/z_miss.wav");
+        precache_sound ("zombie/z_hit.wav");
 	precache_sound ("zombie/idle_w2.wav");
 
 	self.solid = SOLID_SLIDEBOX;
@@ -512,6 +524,8 @@ If crucified, stick the bounding box 12 pixels back into a wall to look right.
 
 	setsize (self, '-16 -16 -24', '16 16 40');
 	self.health = 60;
+        self.max_health = 60;
+	self.mass = 0.6;
 
 	self.th_stand = zombie_stand1;
 	self.th_walk = zombie_walk1;
@@ -526,6 +540,7 @@ If crucified, stick the bounding box 12 pixels back into a wall to look right.
 
 	if (self.spawnflags & SPAWN_CRUCIFIED)
 	{
+                self.inpain = 2;
 		self.movetype = MOVETYPE_NONE;
 		zombie_cruc1 ();
 	}

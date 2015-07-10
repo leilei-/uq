@@ -1,26 +1,79 @@
 float   enemy_vis, enemy_infront, enemy_range;
 float   enemy_yaw;
 void() FoundTarget;
-
+void() ogre_pull1;
 /*
-
 A monster is in fight mode if it thinks it can effectively attack its
 enemy.
-
 When it decides it can't attack, it goes into hunt mode.
-
 */
+
+void() MonsterWaterMove =
+{
+	if(self.pain_finished<=time||random()<0.2)
+	{
+        if ((pointcontents(self.origin+'0 0 24') < -2 && pointcontents(self.origin+'0 0 24') > -5&&self.suff!=1) || self.suff>1)
+	  {
+	  	if(self.enemy==world)
+			self.enemy=self;
+		T_Damage(self,self.enemy,self.enemy,2);
+		self.pain_finished=time;
+		self.th_pain(self.enemy,2);
+		if(self.health<=0)
+			if(self.suff>0)
+				sound (self, CHAN_VOICE, "weapons/heartatt.wav", 1, ATTN_NORM);
+			else
+				sound (self, CHAN_VOICE, "player/h2odeath.wav", 1, ATTN_NORM);
+		else if (random() > 0.5)
+			sound (self, CHAN_VOICE, "player/drown1.wav", 1, ATTN_NORM);
+		else if(random()<0.5)
+			sound (self, CHAN_VOICE, "player/drown2.wav", 1, ATTN_NORM);
+	  }
+        if (pointcontents(self.origin - '0 0 24') == CONTENT_LAVA)
+  	  {
+		if(self.enemy==world)
+			self.enemy=self;
+            T_Damage (self,self.enemy, self.enemy, 5);
+		}
+        else if (pointcontents(self.origin - '0 0 24') == CONTENT_SLIME)
+	  	{
+		if(self.enemy==world)
+			self.enemy=self;
+            T_Damage (self,self.enemy, self.enemy, 1);
+	  }
+	}
+	  if (pointcontents(self.origin+'0 0 24') < -2 && pointcontents(self.origin+'0 0 24') > -5)
+	  {
+              self.origin_z = self.origin_z + 2;
+	        if(self.racename=="Borg")
+	        {
+      	    sound (self, CHAN_AUTO, "enforcer/enfstop.wav", 1, ATTN_NORM);
+		    if(self.enemy==world)
+				self.enemy=self;
+	          T_Damage (self, self.enemy, self.enemy, 3);
+                T_RadiusDamageWater(self, self, 128,self);
+	          self.zap_finished = time + 0.5;
+	        }
+                  if(random()<0.2&&random()<0.2&&(self.flags&FL_MONSTER)&&self.takedamage&&self.alive&&self.health&&self.classname!="zombie" && self.classname!="rotfish"&&self.suff!=1)
+	              DeathBubbles (1);
+	  }
+};
+
 void()Bleed=
 {
         if(self.pain_finished<=time&&self.alive)
                 {
-                SpawnBlood (self.origin+'0 0 12', '0 0 -64', self.bloodloss);
+                SpawnBlood (self.origin+'0 0 12', '0 0 -64', self.bloodloss,self);
                 if(random()<0.2)
                         {
+                        if (self.bloodloss > 3 && self.classname == "player")
+                                self.bloodloss = 3;
                         self.health = self.health - self.bloodloss;
                         self.pain_finished = time + 0.5;
                         if (self.health<=0)
-                                Killed(self,self.woundmaker);
+                                Killed(self,self.woundmaker,self.woundmaker);
+                        else if(random()<0.2&&random()<0.5)
+                                self.th_pain(self.woundmaker,100);
                         }
                 }
 };
@@ -50,32 +103,50 @@ float() CheckAnyAttack =
                         return FALSE;
                 else if (self.controller.enemy.alive&&self.controller.enemy!=self&&self.controller.enemy!=world)
                         if(visible(self.controller.enemy)||self.enemy==world||self.enemy==self.controller)
-                        {
+//                        {
                         self.enemy = self.controller.enemy;
-                        FoundTarget();
-                        }
-                        else self.oldenemy=self.controller.enemy;
+//                        bprint("Attacking Controller's enemy\n");
+//                        FoundTarget();
+//                        }
+                        else
+//                        {
+                        self.oldenemy=self.controller.enemy;
+//                        bprint("Putting Controller's enemy in Que\n");
+//                        }
+//        bprint("Past Checkpoint 1\n");
 
-	if (!enemy_vis)
-                return FALSE;
-
-        if(self.enemy.isfeign)
+        if ((!enemy_vis) || self.enemy.isfeign || (self.enemy.inpain == 2))
                 return FALSE;
 
         if (self.enemy == self || (self.charmed && (self.enemy.controller == self.controller || self.enemy == world)))
                 {
+//                bprint("No Enemy\n");
                 self.oldenemy = self.controller;
                 self.enemy == self.controller;
                 if(!FindTarget())
                 return FALSE;
                 }
-
+//        bprint("Past Checkpoint 2\n");
 
         if (!self.enemy.alive&&self.enemy.classname!="holo")
                 return FALSE;
 
+	if ((pointcontents(self.origin+'0 0 24') < -2 && pointcontents(self.origin+'0 0 24') > -5) || self.suff>0)
+	  {
+		MonsterWaterMove();
+	  	    if(random()<0.5)
+			return FALSE;
+	  }		
+
         if(self.bloodloss>0)
+	  {
                 Bleed();
+	  	    if(random()<0.2)
+			return FALSE;
+	  }		
+
+        if(self.phase==0||random()<0.2)
+                self.phase = rint((random() * 4) + 1);
 
 if (self.classname == "fiend")
 {
@@ -121,7 +192,7 @@ if(self.classname=="shambler")
 
 	traceline (spot1, spot2, FALSE, self);
 
-if (trace_ent != self.enemy&&(!self.enemy.ducking))
+if (trace_ent != self.enemy&&trace_ent.controller!=self.enemy&&trace_ent.owner!=self.enemy&&(!self.enemy.ducking))
         if(self.classname=="scrag")
 	{	// don't have a clear shot, so move to a side
 		if (self.attack_state != AS_STRAIGHT)
@@ -171,9 +242,18 @@ else if (self.classname == "ogre")
 		}
 	}
 
-	if (enemy_range == RANGE_FAR)
-		return FALSE;
 		
+        if (enemy_range == RANGE_FAR)
+		return FALSE;
+
+        if(self.ammo_rockets<1)
+                if(self.lasthand>-1)
+                        return FALSE;
+                else
+                {
+                        ogre_pull1();
+                        return;
+                }
 	else if (enemy_range == RANGE_NEAR)
 		chance = 0.10;
 	else if (enemy_range == RANGE_MID)
@@ -333,6 +413,7 @@ float(entity targ) range;
 void(float d) ai_charge =
 {
 	ai_face ();	
+	self.running=TRUE;
 	movetogoal (d);		// done in C code...
 };
 
@@ -350,6 +431,7 @@ void() ai_charge_side =
 	dtemp = self.enemy.origin - 30*v_right;
 	heading = vectoyaw(dtemp - self.origin);
 	
+	self.running=TRUE;
 	walkmove(heading, 20);
 };
 

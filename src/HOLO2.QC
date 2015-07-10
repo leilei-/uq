@@ -1,4 +1,25 @@
 void() holo_stand1; // = [12, holo_stand2] {};
+/*
+void(entity me, entity camera) SetViewPoint =
+{
+  msg_entity = me;                         // target of message
+  WriteByte (MSG_ONE, SVC_SETVIEWPORT);    // 5 = SVC_SETVIEWPORT;  
+  WriteEntity (MSG_ONE, camera);           // view port
+  WriteByte (MSG_ONE, SVC_SETVIEWANGLES);  // 10 = SVC_SETVIEWANGLES
+  WriteAngle(MSG_ONE, camera.angles_x);    // tilt 
+  WriteAngle(MSG_ONE, camera.angles_y);    // yaw
+  WriteAngle(MSG_ONE, camera.angles_z);    // flip
+};
+
+void(entity me, vector viewangles) SetViewAngle =
+{
+  msg_entity = me;                         // target of message
+  WriteByte(MSG_ONE, SVC_SETVIEWANGLES);   // 10 = SVC_SETVIEWANGLES
+  WriteAngle(MSG_ONE, viewangles_x);       // tilt 
+  WriteAngle(MSG_ONE, viewangles_y);       // yaw
+  WriteAngle(MSG_ONE, viewangles_z);       // flip
+};
+*/
 
 void(entity me, entity camera) HoloView =
 {
@@ -17,23 +38,83 @@ void(entity me, entity camera) HoloView =
 void(entity me) HoloCam = 
 {
   local entity camera, viewpoint;
+  local float diff;
   local	vector me_src;
   local vector me_targ;
   local vector me_fire;
 
-  if (me.newholo.active)
+/*
+  if(me.hoverbomb.running)
+        {
+        me.v_angle=me.hoverbomb.v_angle;
+        viewpoint = me.hoverbomb;
+        }
+  else
+*/
+  if(me.racename=="Borg")
+  {
+  if(me.borgview>=me.charmed)
+        {
+        me.borgview=1;
+        me.aflag=69;
+        me.borgsee=self;
+        }
+  else
+  {
+  local string printnum;
+  camera=findradius(self.origin,10000);
+  viewpoint=world;
+  diff=me.charmed + 1;
+  while(camera)
+        {
+        if(camera.racename=="Borg"&&camera.volume-me.borgview<diff && camera.volume-me.borgview>0&&camera!=me&&camera.controller==me)
+                {
+                diff=camera.volume - me.borgview;
+                viewpoint=camera;
+                me.borgsee=camera;
+                }
+        camera=camera.chain;
+        }
+   if(viewpoint==world)
+        {
+        sprint(me,"You have no more Borg in your unit.\n");
+        me.borgview=1;
+        me.aflag=69;
+        me.borgsee=self;
+        }
+   else
+     {
+        me.borgview=me.borgsee.volume;
+        sprint(me,"Monitoring Borg ");
+        printnum=ftos(viewpoint.volume);
+        sprint(me,printnum);
+        sprint(me," of ");
+        printnum=ftos(me.charmed);
+        sprint(me,printnum);
+        sprint(me,"\n");
+        sprint(me,"Health:  ");
+        printnum=ftos(viewpoint.health);
+        sprint(me,printnum);
+        sprint(me,"\n");
+     }
+//     Ammo too?
+    }
+   }
+  else if(me.fireflies.alivetime>time)
+        viewpoint = me.fireflies;
+  else if (me.newholo.active)
         viewpoint = me.newholo;
   else if (me.teleeyes.active)
         viewpoint = me.teleeyes;
   else
         {
-        sound (self, CHAN_WEAPON, "doors/basetry.wav", 1 , ATTN_NORM);
-        sprint (self,"Neither Holograph or TeleEyes are Active!\n");
+        sound (me, CHAN_WEAPON, "doors/basetry.wav", 1 , ATTN_NORM);
+        sprint (me,"Neither Holograph or TeleEyes are Active!\n");
         return;
         }
 
 
-  if(me.aflag!=0)                // camera is on, set it off
+  if((me.aflag!=0&&me.racename!="Borg")||(me.racename=="Borg"&&me.aflag==69))                // camera is on, set it off
   { 
     camera=me;
     HoloView(me, me);      // restore player position
@@ -44,7 +125,7 @@ void(entity me) HoloCam =
   else                             // camera is off, try to set it on
   {
     HoloView(me, viewpoint);       // Restore player position
-    sound (self, CHAN_AUTO, "items/inv3.wav", 0.5, ATTN_IDLE);
+    sound (me, CHAN_AUTO, "items/inv3.wav", 0.5, ATTN_IDLE);
     sprint(me,"Remote Camera on!\n");      // Message for player
     me.aflag=666;                       // Camera is on
   }
@@ -123,6 +204,11 @@ void(entity actor) RemoveHolo =
         sound (actor, CHAN_BODY, "misc/r_tele1.wav", 1, ATTN_NORM);
         actor.active = FALSE;
         actor.feigning = FALSE;
+        if(actor.isfeign)
+                if (actor.owner.enemy.classname == "player")
+                        actor.owner.enemy.frags = actor.owner.enemy.frags - 1;
+                else
+                        actor.owner.frags = actor.owner.frags + 1;
         actor.isfeign = FALSE;
         sprint(actor.owner,"Holograph Removed\n");
         remove(actor);
@@ -150,6 +236,7 @@ local entity hol;
         hol.skin = myself.skin;
         setmodel (hol, "progs/player.mdl");
         hol.classname = "holo";
+        hol.netname = myself.netname;
         hol.owner=myself;
         myself.newholo = hol;
         stuffcmd (hol.owner, "bf\n");
@@ -197,11 +284,19 @@ void() CheckHoloCommand =
 
 void(entity actor) feign =
 {
+local float fraglimit;
         if (!actor.isfeign)              // If not already, feign death
         {
+                fraglimit = cvar("fraglimit");
                 actor.view_ofs = '0 0 2';
                 if (self.enemy.classname == "player")
-                        self.enemy.frags = self.enemy.frags + 1;
+                        {
+                        if(self.enemy.frags<fraglimit - 1)
+                                {
+                                self.enemy.frags = self.enemy.frags + 1;
+                                self.fooling = TRUE;
+                                }
+                        }
                 else
                         self.frags = self.frags - 1;
                 actor.isfeign = TRUE;
@@ -214,7 +309,11 @@ void(entity actor) feign =
                 setsize (actor, VEC_HULL_MIN, VEC_HULL_MAX);
                 actor.view_ofs = '0 0 22';
                 if (self.enemy.classname == "player")
-                        self.enemy.frags = self.enemy.frags - 1;
+                        if(self.fooling==TRUE)
+                                {
+                                self.enemy.frags = self.enemy.frags - 1;
+                                self.fooling = FALSE;
+                                }
                 else
                         self.frags = self.frags + 1;
         actor.isfeign = FALSE;

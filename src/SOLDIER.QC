@@ -247,7 +247,9 @@ void() army_die =
 // check for gib
 	if (self.health < -35)
 	{
-        self.enemy.exp = self.enemy.exp + 1000;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (15 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (15 - self.health)*skill;
         self.netname = "progs/h_guard.mdl";
         CorpseDie();
         return;
@@ -272,18 +274,36 @@ void() monster_army =
 	}
 
 
+        if(!self.charmed)
+        {
+	precache_model ("progs/soldier.mdl");
+        precache_model ("progs/h_guard.mdl");
+        precache_model ("progs/gib1.mdl");
+	precache_model ("progs/gib2.mdl");
+	precache_model ("progs/gib3.mdl");
+
+	precache_sound ("soldier/death1.wav");
+	precache_sound ("soldier/idle.wav");
+	precache_sound ("soldier/pain1.wav");
+	precache_sound ("soldier/pain2.wav");
+	precache_sound ("soldier/sattck1.wav");
+	precache_sound ("soldier/sight1.wav");
+        }
 	self.solid = SOLID_SLIDEBOX;
 	self.movetype = MOVETYPE_STEP;
 
 	setmodel (self, "progs/soldier.mdl");
 
 	setsize (self, '-16 -16 -24', '16 16 40');
-	self.health = 30;
-        self.alive = TRUE;
+	if(skill==3)
+		self.health = 60;
+	else	self.health = 30;
+	self.mass = 1;
+	self.alive = TRUE;
         self.classname ="grunt";
-        // 15-23 shells
+        // 10-18 shells
         self.ammo_shells = random() * 10;
-        self.ammo_shells = rint(self.ammo_shells) + 14;
+        self.ammo_shells = rint(self.ammo_shells) + 9;
         self.initthink = monster_army;
 	self.th_stand = army_stand1;
 	self.th_walk = army_walk1;

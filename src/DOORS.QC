@@ -159,11 +159,12 @@ void() door_use =
 
 void() door_trigger_touch =
 {
-	if (other.health <= 0)
+        if (other.health <= 0&&other.classname!="chakram")
 		return;
 
 	if (time < self.attack_finished)
 		return;
+
 	self.attack_finished = time + 1;
 
 	activator = other;

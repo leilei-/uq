@@ -1,23 +1,21 @@
-/*
- * Corpse-related material
- * By AsmodeusB
- * It's a solid corpse which can be gibbed, and moved (by running into it).
- * Also, it falls down if you push it off a cliff. ;)
- */
 .float floatlevel;
 void() CorpsePain =
 {
- SpawnMeatSpray (self.origin, crandom() * 100 * v_right);
+if(self.onfire==0)
+        SpawnMeatSpray (self.origin, crandom() * 100 * v_right);
 };
 
 void() CorpseMove = 
 {
+if(other.origin_z>self.origin_z + 10 && (!other.flags&FL_ONGROUND)&&other.health&&other.velocity_z<1)
+        other.flags=other.flags + FL_ONGROUND;
 
 if(other.takedamage != DAMAGE_AIM)     // not living
  {
         self.velocity = '0 0 0';
         return;
  }
+
 if(other.archtime > time&&other.charmed<10)
 {
 local entity summoned;
@@ -48,7 +46,7 @@ else
  self.velocity_y = other.velocity_y/3;
  if (other.classname == "player" && self.origin_z > other.origin_z && other.velocity_z > 0)
         self.velocity_z = other.velocity_z;
-self.velocity = self.velocity + '0 0 7';
+ self.velocity = self.velocity + '0 0 7';
 }
 
 if (self.flags & FL_ONGROUND)
@@ -62,10 +60,9 @@ void() CorpseDie =
 {
  local float i;
  local float j;
-
- sound (self, CHAN_VOICE, "player/udeath.wav", 1, ATTN_NORM);
+if((self.skin!=2&&self.classname!="player")||(self.skin!=25&&self.classname=="player")||self.classname=="corpse")
+        sound (self, CHAN_VOICE, "player/udeath.wav", 1, ATTN_NORM);
  // MakeSolidCorpse() sets netname to the head model
- ThrowSolidHead (self.netname, self.health, self.classname);
  i = 0;
  while(i<3)
  {
@@ -78,6 +75,10 @@ void() CorpseDie =
     ThrowGib ("progs/gib3.mdl", self.health);
   i = i + 1;
  }
+if(!self.decap)
+        ThrowSolidHead (self.netname, self.health, self.classname);
+else
+        remove(self);
 };
 
 void() CorpseOnlyDie =
@@ -87,7 +88,6 @@ void() CorpseOnlyDie =
 
  sound (self, CHAN_VOICE, "player/udeath.wav", 1, ATTN_NORM);
  // MakeSolidCorpse() sets netname to the head model
- ThrowSolidHead (self.netname, self.health*5, self.frommonname);
  i = 0;
  while(i<3)
  {
@@ -100,9 +100,28 @@ void() CorpseOnlyDie =
     ThrowGib ("progs/gib3.mdl", self.health*5);
   i = i + 1;
  }
+if(!self.decap)
+        ThrowSolidHead (self.netname, self.health*5, self.frommonname);
+else
+        remove(self);
+};
+
+void() Spurt =
+{
+local float bloodleak;
+                makevectors(self.angles);
+                bloodleak=rint(random()*5) + 3;
+                SpawnBlood (self.origin+v_forward*24+'0 0 -22', '0 0 -5'+ v_forward*(random()*20 + 20), bloodleak,self);
+                sound (self, CHAN_AUTO, "weapons/slop.wav", 0.3, ATTN_NORM);
+                if (self.alivetime < time||self.watertype==CONTENT_LAVA)
+                        T_Damage(self,world,world,self.health);
+                self.think=Spurt;
+                self.nextthink=time + random()*5 + 0.5;
 };
 
 void () CorpseThink =
+{
+if(!deathmatch&&!coop&&!teamplay)
 {
 local float cbob_z, cbob_x, cbob_y;
         if ((self.watertype == CONTENT_WATER) || (self.watertype == CONTENT_SLIME))
@@ -151,10 +170,16 @@ local float cbob_z, cbob_x, cbob_y;
                         self.origin_x = self.origin_x + (random () * 4 - 2);
                         self.origin_y = self.origin_y + (random () * 4 - 2);
                 }
-if (self.alivetime < time||self.watertype==CONTENT_LAVA)
-        T_Damage(self,self,self,self.health);
 self.think = CorpseThink;
 self.nextthink = time + 0.5;
+}
+else
+{
+self.think = CorpseThink;
+self.nextthink = time + 3;
+}
+if (self.alivetime < time||self.watertype==CONTENT_LAVA)
+        T_Damage(self,self,self,self.health);
 };
 
 /*
@@ -171,7 +196,9 @@ void(string headmdl, string frommon) MakeSolidCorpse =
 	self.th_pain = CorpsePain;
 	self.th_melee = SUB_Null;
 	self.th_missile = SUB_Null;
-        self.th_die = CorpseOnlyDie;
+        if(self.classname=="T-800")
+                self.th_die = GrenadeExplode;
+        else self.th_die = CorpseOnlyDie;
 	self.touch = CorpseMove;
         self.beendead = TRUE;
         self.health = 25;
@@ -179,10 +206,13 @@ void(string headmdl, string frommon) MakeSolidCorpse =
 	self.takedamage = DAMAGE_AIM;
 	self.solid = SOLID_BBOX;
 	self.movetype = MOVETYPE_STEP;
-        setsize (self, '-16 -16 -23', '16 16 -3');
+        if(skill<3&&(!deathmatch))
+                setsize (self, '-16 -16 -23', '16 16 -8');
+        else setsize (self, '-16 -16 -23', '16 16 -3');//Allows step-over, but can't walk on or jump off them
         if (self.flags & FL_ONGROUND)
                 self.flags = self.flags - (self.flags & FL_ONGROUND);
         self.flags = self.flags & (!FL_MONSTER);
+	  self.running=FALSE;
         self.classname = "corpse";
         self.alive = FALSE;
         self.charmed = FALSE;
@@ -192,6 +222,14 @@ void(string headmdl, string frommon) MakeSolidCorpse =
         self.floatlevel = (random()* 4) + 12;
         self.frommonname = frommon;
         self.onfire = FALSE;
-        self.alivetime = time + (random()*10) + 55; // decompose after 1 minute
-        CorpseThink();
+        if(deathmatch||teamplay)
+                self.alivetime = time + (random()*40) + 100; // decompose after @ 2 minutes
+        else self.alivetime = time + (random()*10) + 55; // decompose after @ 1 minute
+        if(self.decap)
+        {
+                self.owner=self;
+                self.think=Spurt;
+                self.nextthink=time + random()*3 + 1;
+        }
+        else CorpseThink();
 };

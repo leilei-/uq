@@ -62,7 +62,7 @@ void(float offset) hknight_shot =
 	local	vector	offang;
 	local	vector	org, vec;
 	
-        if (self.silencetime > time)
+        if (self.alivetime > time)
                 {
                 hknight_melee();
                 return;
@@ -206,7 +206,9 @@ void() hknight_die =
 // check for gib
 	if (self.health < -40)
 	{
-        self.enemy.exp = self.enemy.exp + (80 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (80 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (80 - self.health)*skill;
         self.netname = "progs/h_hellkn.mdl";
         CorpseDie();
         return;
@@ -406,15 +408,33 @@ void() monster_hell_knight =
 		return;
 	}
 	
+        if(!self.charmed)
+        {
+	precache_model2 ("progs/hknight.mdl");
+	precache_model2 ("progs/k_spike.mdl");
+	precache_model2 ("progs/h_hellkn.mdl");
+
+	
+	precache_sound2 ("hknight/attack1.wav");
+	precache_sound2 ("hknight/death1.wav");
+	precache_sound2 ("hknight/pain1.wav");
+	precache_sound2 ("hknight/sight1.wav");
+	precache_sound2 ("hknight/idle.wav");
+	precache_sound2 ("hknight/grunt.wav");
+        
+        }
 	self.solid = SOLID_SLIDEBOX;
 	self.movetype = MOVETYPE_STEP;
 
 	setmodel (self, "progs/hknight.mdl");
 
 	setsize (self, '-16 -16 -24', '16 16 40');
-	self.health = 250;
+	if(skill==3)
+		self.health = 500;
+	else	self.health = 250;
+	self.mass = 2;
         self.alive = TRUE;
-        self.classname ="death knight";
+        self.classname ="hell knight";
         self.initthink = monster_hell_knight;
 
 	self.th_stand = hknight_stand1;

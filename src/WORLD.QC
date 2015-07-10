@@ -1,5 +1,5 @@
 
-void() InitBodyQue;
+//void() InitBodyQue;
 
 
 void() main =
@@ -172,7 +172,7 @@ World Types:
 void() worldspawn =
 {
 	lastspawn = world;
-	InitBodyQue ();
+//        InitBodyQue ();
 
 // custom map attributes
 	if (self.model == "maps/e1m8.bsp")
@@ -183,8 +183,11 @@ void() worldspawn =
 // the area based ambient sounds MUST be the first precache_sounds
 
 // player precaches	
-	W_Precache ();			// get weapon precaches
+        W_Precache ();                  // get weapon precaches
 
+//In case of Borg Assimilation
+        precache_model ("progs/h_mega.mdl");
+        precache_model ("progs/enforcer.mdl");
 //Dog
 	precache_model ("progs/h_dog.mdl");
 	precache_model ("progs/dog.mdl");
@@ -194,61 +197,6 @@ void() worldspawn =
 	precache_sound ("dog/dpain1.wav");
 	precache_sound ("dog/dsight.wav");
 	precache_sound ("dog/idle.wav");
-//Enforcer
-	precache_model2 ("progs/enforcer.mdl");
-	precache_model2 ("progs/h_mega.mdl");
-
-	precache_sound2 ("enforcer/death1.wav");
-	precache_sound2 ("enforcer/idle1.wav");
-	precache_sound2 ("enforcer/pain1.wav");
-	precache_sound2 ("enforcer/pain2.wav");
-	precache_sound2 ("enforcer/sight1.wav");
-	precache_sound2 ("enforcer/sight2.wav");
-	precache_sound2 ("enforcer/sight3.wav");
-	precache_sound2 ("enforcer/sight4.wav");
-
-//Hell Knight
-	precache_model2 ("progs/hknight.mdl");
-	precache_model2 ("progs/k_spike.mdl");
-	precache_model2 ("progs/h_hellkn.mdl");
-
-	
-	precache_sound2 ("hknight/attack1.wav");
-	precache_sound2 ("hknight/death1.wav");
-	precache_sound2 ("hknight/pain1.wav");
-	precache_sound2 ("hknight/sight1.wav");
-	precache_sound ("hknight/hit.wav");		// used by C code, so don't sound2
-	precache_sound2 ("hknight/slash1.wav");
-	precache_sound2 ("hknight/idle.wav");
-	precache_sound2 ("hknight/grunt.wav");
-
-	precache_sound ("knight/sword1.wav");
-	precache_sound ("knight/sword2.wav");
-//Knight
-	precache_model ("progs/knight.mdl");
-	precache_model ("progs/h_knight.mdl");
-
-	precache_sound ("knight/kdeath.wav");
-	precache_sound ("knight/khurt.wav");
-	precache_sound ("knight/ksight.wav");
-//        precache_sound ("knight/sword1.wav");
-//        precache_sound ("knight/sword2.wav");
-        precache_sound ("knight/idle.wav");
-//Soldier
-	precache_model ("progs/soldier.mdl");
-        precache_model ("progs/h_guard.mdl");
-        precache_model ("progs/gib1.mdl");
-	precache_model ("progs/gib2.mdl");
-	precache_model ("progs/gib3.mdl");
-
-	precache_sound ("soldier/death1.wav");
-	precache_sound ("soldier/idle.wav");
-	precache_sound ("soldier/pain1.wav");
-	precache_sound ("soldier/pain2.wav");
-	precache_sound ("soldier/sattck1.wav");
-	precache_sound ("soldier/sight1.wav");
-
-	precache_sound ("player/udeath.wav");		// gib death
 //Wiz
 	precache_model ("progs/wizard.mdl");
 	precache_model ("progs/h_wizard.mdl");
@@ -266,9 +214,11 @@ void() worldspawn =
 	precache_model ("progs/h_ogre.mdl");
 	precache_model ("progs/grenade.mdl");
 
-	precache_sound ("ogre/ogdrag.wav");
+//	precache_sound ("ogre/ogdrag.wav");
 	precache_sound ("ogre/ogdth.wav");
-	precache_sound ("ogre/ogidle.wav");
+        precache_sound ("weapons/ogsawidl.wav");
+        precache_sound ("weapons/ogsawact.wav");
+//	precache_sound ("ogre/ogidle.wav");
 	precache_sound ("ogre/ogidle2.wav");
 	precache_sound ("ogre/ogpain1.wav");
 	precache_sound ("ogre/ogsawatk.wav");
@@ -289,17 +239,6 @@ void() worldspawn =
 	precache_sound ("shambler/melee2.wav");
 	precache_sound ("shambler/smack.wav");
 //^Summon Shambler
-	precache_model2 ("progs/shalrath.mdl");
-	precache_model2 ("progs/h_shal.mdl");
-	precache_model2 ("progs/v_spike.mdl");
-	
-	precache_sound2 ("shalrath/attack.wav");
-	precache_sound2 ("shalrath/attack2.wav");
-	precache_sound2 ("shalrath/death.wav");
-	precache_sound2 ("shalrath/idle.wav");
-	precache_sound2 ("shalrath/pain.wav");
-	precache_sound2 ("shalrath/sight.wav");
-//^Summon Vore
         precache_model ("progs/s_light.spr");
 	precache_model ("progs/demon.mdl");
 	precache_model ("progs/h_demon.mdl");
@@ -311,6 +250,17 @@ void() worldspawn =
 	precache_sound ("demon/idle1.wav");
 	precache_sound ("demon/sight2.wav");
 //^Summon Fiend
+	precache_model2 ("progs/shalrath.mdl");
+	precache_model2 ("progs/h_shal.mdl");
+	precache_model2 ("progs/v_spike.mdl");
+	
+	precache_sound2 ("shalrath/attack.wav");
+	precache_sound2 ("shalrath/attack2.wav");
+	precache_sound2 ("shalrath/death.wav");
+	precache_sound2 ("shalrath/idle.wav");
+	precache_sound2 ("shalrath/pain.wav");
+	precache_sound2 ("shalrath/sight.wav");
+//^Summon Vore
 
 //End monster precache
 
@@ -321,16 +271,6 @@ void() worldspawn =
 
 // setup precaches allways needed
 	precache_sound ("items/itembk2.wav");		// item respawn sound
-	precache_sound ("player/plyrjmp8.wav");		// player jump
-	precache_sound ("player/land.wav");			// player landing
-	precache_sound ("player/land2.wav");		// player hurt landing
-	precache_sound ("player/drown1.wav");		// drowning pain
-	precache_sound ("player/drown2.wav");		// drowning pain
-	precache_sound ("player/gasp1.wav");		// gasping for air
-	precache_sound ("player/gasp2.wav");		// taking breath
-	precache_sound ("player/h2odeath.wav");		// drowning death
-        precache_sound ("demon/djump.wav");         // demon jump
-        precache_sound ("demon/dhit2.wav");
 
 	precache_sound ("misc/talk.wav");			// talk
 	precache_sound ("player/teledth1.wav");		// telefrag
@@ -339,12 +279,12 @@ void() worldspawn =
 	precache_sound ("misc/r_tele3.wav");
 	precache_sound ("misc/r_tele4.wav");
 	precache_sound ("misc/r_tele5.wav");
-	precache_sound ("weapons/lock4.wav");		// ammo pick up
+//        precache_sound ("weapons/lock4.wav");           // ammo pick up
 	precache_sound ("weapons/pkup.wav");		// weapon up
 	precache_sound ("items/armor1.wav");		// armor up
 	precache_sound ("weapons/lhit.wav");		//lightning
 	precache_sound ("weapons/lstart.wav");		//lightning start
-	precache_sound ("items/damage3.wav");
+//        precache_sound ("items/damage3.wav");//?
 
 	precache_sound ("misc/power.wav");			//lightning for boss
 
@@ -352,22 +292,6 @@ void() worldspawn =
 	precache_sound ("player/gib.wav");			// player gib sound
 	precache_sound ("player/udeath.wav");		// player gib sound
 	precache_sound ("player/tornoff2.wav");		// gib sound
-
-// player pain sounds
-
-	precache_sound ("player/pain1.wav");
-	precache_sound ("player/pain2.wav");
-	precache_sound ("player/pain3.wav");
-	precache_sound ("player/pain4.wav");
-	precache_sound ("player/pain5.wav");
-	precache_sound ("player/pain6.wav");
-
-// player death sounds
-	precache_sound ("player/death1.wav");
-	precache_sound ("player/death2.wav");
-	precache_sound ("player/death3.wav");
-	precache_sound ("player/death4.wav");
-	precache_sound ("player/death5.wav");
 
 // ax sounds	
 	precache_sound ("weapons/ax1.wav");			// ax swoosh
@@ -379,6 +303,8 @@ void() worldspawn =
 	precache_sound ("player/inh2o.wav");		// player enter water
 	precache_sound ("player/inlava.wav");		// player enter lava
 	precache_sound ("misc/outwater.wav");		// leaving water sound
+        precache_sound ("misc/secret.wav");           // secret area
+        precache_sound ("weapons/lock.wav");                     //Predator lock-on
 
 	precache_sound ("player/lburn1.wav");		// lava burn
 	precache_sound ("player/lburn2.wav");		// lava burn
@@ -389,6 +315,7 @@ void() worldspawn =
         precache_model ("progs/demon.mdl");
         precache_model ("progs/laser.mdl"); //BILL ADD
 	precache_model ("progs/player.mdl");
+        precache_model ("progs/anvil.mdl");
 	precache_model ("progs/eyes.mdl");
 	precache_model ("progs/h_player.mdl");
 	precache_model ("progs/gib1.mdl");
@@ -405,6 +332,10 @@ void() worldspawn =
 	precache_model ("progs/v_shot2.mdl");
 	precache_model ("progs/v_nail2.mdl");
 	precache_model ("progs/v_rock2.mdl");
+        precache_model ("progs/v_home.mdl");
+        precache_model ("progs/v_flame.mdl");
+        precache_model ("progs/v_pipe.mdl");
+        precache_model ("progs/stinger.mdl");
 
 	precache_model ("progs/bolt.mdl");		// for lightning gun
 	precache_model ("progs/bolt2.mdl");		// for lightning gun
@@ -483,44 +414,42 @@ BODY QUE
 ==============================================================================
 */
 
-entity	bodyque_head;
-
-void() bodyque =
-{	// just here so spawn functions don't complain after the world
-	// creates bodyques
-};
-
-void() InitBodyQue =
+void() Head =
 {
-	local entity	e;
-	
-	bodyque_head = spawn();
-	bodyque_head.classname = "bodyque";
-	bodyque_head.owner = spawn();
-	bodyque_head.owner.classname = "bodyque";
-	bodyque_head.owner.owner = spawn();
-	bodyque_head.owner.owner.classname = "bodyque";
-	bodyque_head.owner.owner.owner = spawn();
-	bodyque_head.owner.owner.owner.classname = "bodyque";
-	bodyque_head.owner.owner.owner.owner = bodyque_head;
+if(self.controller.racename=="T-800")
+        ThrowSolidHead(self.model,0,"T-800");
+else ThrowSolidHead(self.model,0,self.controller.netname);
 };
 
-
-// make a body que entry for the given ent so the ent can be
-// respawned elsewhere
-void(entity ent) CopyToBodyQue =
+void() Corpse =
 {
-	bodyque_head.angles = ent.angles;
-	bodyque_head.model = ent.model;
-	bodyque_head.modelindex = ent.modelindex;
-	bodyque_head.frame = ent.frame;
-	bodyque_head.colormap = ent.colormap;
-	bodyque_head.movetype = ent.movetype;
-	bodyque_head.velocity = ent.velocity;
-	bodyque_head.flags = 0;
-	setorigin (bodyque_head, ent.origin);
-	setsize (bodyque_head, ent.mins, ent.maxs);
-	bodyque_head = bodyque_head.owner;
+if(self.controller.racename=="T-800")
+        MakeSolidCorpse("progs/h_player.mdl","T-800");
+else MakeSolidCorpse("progs/h_player.mdl",self.controller.netname);
 };
 
-
+void() SolidPlayer =
+{
+local entity corpse;
+        corpse = spawn();
+        if(self.angles_x>15||self.angles_x<-15)
+                self.angles_x=0;
+        if(self.angles_z>15||self.angles_z<-15)
+                self.angles_z=0;
+        corpse.angles = self.angles;
+        corpse.model = self.model;
+        corpse.modelindex = self.modelindex;
+        corpse.frame = self.frame;
+        corpse.colormap = self.colormap;
+        corpse.movetype = self.movetype;
+        corpse.velocity = self.velocity;
+        corpse.flags = 0;
+        corpse.effects = 0;
+        corpse.skin = self.skin;
+        corpse.controller = self;
+        setorigin (corpse, self.origin);
+        if(self.model=="progs/h_player.mdl")
+                corpse.think=Head;
+        else corpse.think=Corpse;
+        corpse.nextthink=time;
+};

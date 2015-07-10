@@ -28,38 +28,38 @@ void() shal_stand     =[      $walk1,       shal_stand    ] {ai_stand();};
 void() shal_walk1     =[      $walk2,       shal_walk2    ] {
 if (random() < 0.2)
 	sound (self, CHAN_VOICE, "shalrath/idle.wav", 1, ATTN_IDLE);
-ai_walk(6);
+ai_walk(8);
 };
-void() shal_walk2     =[      $walk3,       shal_walk3    ] {ai_walk(4);};
+void() shal_walk2     =[      $walk3,       shal_walk3    ] {ai_walk(6);};
 void() shal_walk3     =[      $walk4,       shal_walk4    ] {ai_walk(0);};
 void() shal_walk4     =[      $walk5,       shal_walk5    ] {ai_walk(0);};
 void() shal_walk5     =[      $walk6,       shal_walk6    ] {ai_walk(0);};
 void() shal_walk6     =[      $walk7,       shal_walk7    ] {ai_walk(0);};
-void() shal_walk7     =[      $walk8,       shal_walk8    ] {ai_walk(5);};
-void() shal_walk8     =[      $walk9,       shal_walk9    ] {ai_walk(6);};
-void() shal_walk9     =[      $walk10,       shal_walk10    ] {ai_walk(5);};
+void() shal_walk7     =[      $walk8,       shal_walk8    ] {ai_walk(7);};
+void() shal_walk8     =[      $walk9,       shal_walk9    ] {ai_walk(8);};
+void() shal_walk9     =[      $walk10,       shal_walk10    ] {ai_walk(7);};
 void() shal_walk10    =[      $walk11,       shal_walk11    ] {ai_walk(0);};
-void() shal_walk11    =[      $walk12,       shal_walk12    ] {ai_walk(4);};
-void() shal_walk12    =[      $walk1,       shal_walk1    ] {ai_walk(5);};
+void() shal_walk11    =[      $walk12,       shal_walk12    ] {ai_walk(6);};
+void() shal_walk12    =[      $walk1,       shal_walk1    ] {ai_walk(7);};
 
 void() shal_run1     =[      $walk2,       shal_run2    ] {
 if (random() < 0.2)
 	sound (self, CHAN_VOICE, "shalrath/idle.wav", 1, ATTN_IDLE);
-ai_run(6);};
-void() shal_run2     =[      $walk3,       shal_run3    ] {ai_run(4);};
+ai_run(10);};
+void() shal_run2     =[      $walk3,       shal_run3    ] {ai_run(8);};
 void() shal_run3     =[      $walk4,       shal_run4    ] {ai_run(0);};
 void() shal_run4     =[      $walk5,       shal_run5    ] {ai_run(0);};
 void() shal_run5     =[      $walk6,       shal_run6    ] {ai_run(0);};
 void() shal_run6     =[      $walk7,       shal_run7    ] {ai_run(0);};
-void() shal_run7     =[      $walk8,       shal_run8    ] {ai_run(5);};
-void() shal_run8     =[      $walk9,       shal_run9    ] {ai_run(6);};
-void() shal_run9     =[      $walk10,       shal_run10    ] {ai_run(5);};
+void() shal_run7     =[      $walk8,       shal_run8    ] {ai_run(9);};
+void() shal_run8     =[      $walk9,       shal_run9    ] {ai_run(10);};
+void() shal_run9     =[      $walk10,       shal_run10    ] {ai_run(9);};
 void() shal_run10    =[      $walk11,       shal_run11    ] {ai_run(0);};
-void() shal_run11    =[      $walk12,       shal_run12    ] {ai_run(4);};
-void() shal_run12    =[      $walk1,       shal_run1    ] {ai_run(5);};
+void() shal_run11    =[      $walk12,       shal_run12    ] {ai_run(8);};
+void() shal_run12    =[      $walk1,       shal_run1    ] {ai_run(9);};
 
 void() shal_attack1     =[      $attack1,       shal_attack2    ] {
-if (self.silencetime > time)
+if (self.alivetime > time)
       return;
 sound (self, CHAN_VOICE, "shalrath/attack.wav", 1, ATTN_NORM);
 ai_face();
@@ -104,7 +104,9 @@ void() shalrath_die =
 // check for gib
         if (self.health < -80)
 	{
-        self.enemy.exp = self.enemy.exp + (130 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (130 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (130 - self.health)*skill;
         self.netname = "progs/h_shal.mdl";
         CorpseDie();
         return;
@@ -121,34 +123,10 @@ ShalMissile
 ================
 */
 void() ShalMissileTouch;
-void() ShalHome;
-void(vector dir,float dist,entity cont,entity targ) ShalMissile2 =
+//oops!
+void() ShalMissile2 =
 {
-	local	entity 	missile;
-        local   float   flytime;
-	flytime = dist * 0.002;
-	if (flytime < 0.1)
-		flytime = 0.1;
-
-	missile = spawn ();
-        missile.owner = cont;
-        missile.classname = "shalmissile";
-	missile.solid = SOLID_BBOX;
-	missile.movetype = MOVETYPE_FLYMISSILE;
-	setmodel (missile, "progs/v_spike.mdl");
-
-	setsize (missile, '0 0 0', '0 0 0');		
-
-        missile.origin = cont.origin + '0 0 10';
-        missile.speed = 400;
-	missile.velocity = dir * 400;
-	missile.avelocity = '300 300 300';
-	missile.nextthink = flytime + time;
-	missile.think = ShalHome;
-        missile.enemy = targ;
-	missile.touch = ShalMissileTouch;
 };
-
 void() ShalMissile =
 {
         local   vector  dir;
@@ -158,7 +136,7 @@ void() ShalMissile =
 	dist = vlen (self.enemy.origin - self.origin);
 	self.effects = self.effects | EF_MUZZLEFLASH;
 	sound (self, CHAN_WEAPON, "shalrath/attack2.wav", 1, ATTN_NORM);
-        ShalMissile2(dir,dist,self,self.enemy);
+//        ShalMissile2(dir,dist,self,self.enemy);
 };
 
 
@@ -185,18 +163,12 @@ void() ShalMissileTouch =
 	if (other == self.owner)
 		return;		// don't explode on owner
 
-        if (other.reflecttime > time)
-              {
-              BounceBack(self.owner,other);
-              return;
-              }
-
 	if (other.classname == "monster_zombie")
 		T_Damage (other, self, self, 110);	
 
         if (other.prottime < time)
                 {
-                T_RadiusDamage (self, self.owner, 40, world);
+                T_RadiusDamage (self, self.owner, 80, world);
                 }
 
         sound (self, CHAN_WEAPON, "weapons/r_exp3.wav", 1, ATTN_NORM);
@@ -231,7 +203,10 @@ void() monster_shalrath =
 	
 	setmodel (self, "progs/shalrath.mdl");
 	setsize (self, VEC_HULL2_MIN, VEC_HULL2_MAX);
-	self.health = 400;
+	if(skill==3)
+		self.health = 800;
+	else	self.health = 400;
+	self.mass = 5;
         self.alive = TRUE;
         self.classname ="vore";
         self.initthink = monster_shalrath;

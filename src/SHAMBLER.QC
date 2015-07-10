@@ -177,7 +177,7 @@ if (random()<0.5)
 void() sham_melee =
 {
 	local float chance;
-	
+        self.volume=FALSE; 
 	chance = random();
 	if (chance > 0.6 || self.health == 600)
 		sham_smash1 ();
@@ -227,7 +227,7 @@ void() CastLightning =
 };
 
 void() sham_magic1     =[      $magic1,       sham_magic2    ] {ai_face();
-        if (self.silencetime > time)
+        if (self.alivetime > time)
                 {
                 sham_melee();
                 return;
@@ -261,6 +261,7 @@ self.owner.frame = 2;
 void() sham_magic6     =[      $magic6,       sham_magic9    ]
 {
 remove (self.owner);
+self.volume=TRUE;
 CastLightning();
 sound (self, CHAN_WEAPON, "shambler/sboom.wav", 1, ATTN_NORM);
 };
@@ -321,9 +322,11 @@ void() sham_die =
 // check for gib
 	if (self.health < -60)
 	{
-        self.enemy.exp = self.enemy.exp + (200 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (200 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (200 - self.health)*skill;
 		sound (self, CHAN_VOICE, "player/udeath.wav", 1, ATTN_NORM);
-		ThrowHead ("progs/h_shams.mdl", self.health);
+                ThrowSolidHead ("progs/h_shams.mdl", self.health,"Shambler");
 		ThrowGib ("progs/gib1.mdl", self.health);
 		ThrowGib ("progs/gib2.mdl", self.health);
 		ThrowGib ("progs/gib3.mdl", self.health);
@@ -352,7 +355,10 @@ void() monster_shambler =
 	setmodel (self, "progs/shambler.mdl");
 
 	setsize (self, VEC_HULL2_MIN, VEC_HULL2_MAX);
-	self.health = 600;
+	if(skill==3)
+		self.health = 1200;
+	else	self.health = 600;
+	self.mass = 10;
         self.alive = TRUE;
         self.classname ="shambler";
         self.initthink = monster_shambler;

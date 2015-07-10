@@ -1,9 +1,3 @@
-/*
- * Head-related material
- * By AsmodeusB & Mike G
- * It's a solid head which can be gibbed, and moved (by running into it).
- * Also, it falls down if you push it off a cliff. ;)
- */
 .float hite;
 
 void() HeadPain =
@@ -14,7 +8,8 @@ void() HeadPain =
 void() HeadMove = 
 {
  local float dir;
-
+if(other.origin_z>self.origin_z + 10 && (!other.flags&FL_ONGROUND)&&other.health&&other.velocity_z<1)
+        other.flags=other.flags + FL_ONGROUND;
 
  if(other.takedamage != DAMAGE_AIM)	// not living
    return;
@@ -41,6 +36,9 @@ if (self.flags & FL_ONGROUND)
 void () HeadThink =
 {
 local float hbob;
+        if(self.flags&FL_ONGROUND)
+                self.Kick_em=FALSE;
+/*
         if ((self.watertype == CONTENT_WATER) || (self.watertype == CONTENT_SLIME))
         {
                 self.floating = TRUE;
@@ -72,7 +70,8 @@ local float hbob;
                         self.origin_y = self.origin_y + (random () * 4 - 2);
 
          }
-if (self.alivetime < time||self.watertype == CONTENT_LAVA)
+*/
+if ((self.alivetime<time&&(!deathmatch))||self.watertype == CONTENT_LAVA)
         HeadDeath();
 self.think = HeadThink;
 self.nextthink = time + 0.5;
@@ -95,15 +94,19 @@ void(string gibname, float dm, string frommon) ThrowSolidHead =
        self.th_pain = HeadPain;
        self.frame = 0;
        self.beendead = TRUE;
-       self.movetype = MOVETYPE_STEP;          // BOUNCE
-       self.takedamage = DAMAGE_AIM;           // NO
-       self.solid = SOLID_BBOX;                // NO
-       setsize (self, '-8 -8 -12', '8 8 10');        // 24==56
-       self.velocity = VelocityForDamage (dm);
+       self.movetype = MOVETYPE_STEP;
+       self.takedamage = DAMAGE_AIM;
+       self.solid = SOLID_BBOX;                
+       if(skill<3&&(!deathmatch))
+               setsize (self, '-8 -8 -12', '8 8 4');
+       else setsize (self, '-8 -8 -12', '8 8 10');//Allows step-over, but can't walk on or jump off them
+       if(dm != -666)
+               self.velocity = VelocityForDamage (dm);
        self.flags = self.flags - (self.flags & FL_ONGROUND);
        self.health = 10;
        self.th_die = HeadDeath;
        self.flags = self.flags & (!FL_MONSTER);
+	 self.running=FALSE;
        self.angles_z = random()*600;
        self.angles_x = random()*600;
        self.angles_y = random()*600;
@@ -116,6 +119,40 @@ void(string gibname, float dm, string frommon) ThrowSolidHead =
        self.touch = HeadMove;
        self.onfire = FALSE;
        self.alivetime = time + 25 + (random()*10); // decompose after 30 seconds
+       if(!deathmatch&&!coop&&!teamplay)
+       {
        self.think = HeadThink;
        self.nextthink = time + 0.5;
+        }
+        else
+        {
+       self.think = SUB_Null;
+       self.nextthink = -1;
+         }
+};
+
+void() headgo=
+{
+        self.skin=rint(random()*24)+1;        
+        ThrowSolidHead("progs/h_player.mdl",-666,"Clay Pigeon");
+};
+
+void() ChuckHead=
+{
+local entity claypigeon;
+local float forwardspeed,upspeed;
+        sound (self, CHAN_AUTO, "weapons/hoverpop.wav", 1, ATTN_NORM);
+        makevectors(self.v_angle);
+        claypigeon=spawn();
+        claypigeon.think=headgo;
+        claypigeon.nextthink=time;
+        claypigeon.movetype=MOVETYPE_BOUNCE;
+        forwardspeed=rint(random()*500) + 500;
+        upspeed=rint(random()*200) + 200;
+        claypigeon.velocity=normalize(v_forward)*forwardspeed + normalize(v_up)*upspeed;
+        setorigin(claypigeon,self.origin+v_forward*48+'0 0 16');
+        claypigeon.avelocity_x=rint(random()*360);
+        claypigeon.avelocity_y=rint(random()*360);
+        claypigeon.avelocity_z=rint(random()*360);
+        claypigeon.Kick_em=TRUE;
 };

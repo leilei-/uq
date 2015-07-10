@@ -53,9 +53,9 @@ void() button_use =
 
 void() button_touch =
 {
-      if(other.classname!="player")  
-              if(other.skin!=1)
-                      if(other.classname!="corpse"&&other.classname!="throwaxe")
+      if(other.classname!="player" && other.controller.classname!="player")  
+              if(other.skin==0)
+                      if(other.classname!="corpse"&&other.classname!="throwaxe"&&other.classname!="chakram")
                             return;
       self.enemy = other;
       button_fire ();
@@ -91,17 +91,18 @@ local float		gtemp, ftemp;
 
 	if (self.sounds == 0)
 	{
-		precache_sound ("buttons/airbut1.wav");
 		self.noise = "buttons/airbut1.wav";
 	}
-	if (self.sounds == 1)
+        else
+//        if (self.sounds == 1)
 	{
 		precache_sound ("buttons/switch21.wav");
 		self.noise = "buttons/switch21.wav";
 	}
-	if (self.sounds == 2)
-	{
-		precache_sound ("buttons/switch02.wav");
+/*
+        if (self.sounds == 2)
+        {
+                precache_sound ("buttons/switch02.wav");
 		self.noise = "buttons/switch02.wav";
 	}
 	if (self.sounds == 3)
@@ -109,7 +110,7 @@ local float		gtemp, ftemp;
 		precache_sound ("buttons/switch04.wav");
 		self.noise = "buttons/switch04.wav";
 	}
-	
+*/ 
 	SetMovedir ();
 
 	self.movetype = MOVETYPE_PUSH;

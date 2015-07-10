@@ -170,7 +170,10 @@ void() dog_atta6	=[	$attack6,	dog_atta7	] {ai_charge(10);};
 void() dog_atta7	=[	$attack7,	dog_atta8	] {ai_charge(10);};
 void() dog_atta8	=[	$attack8,	dog_run1	] {ai_charge(10);};
 
-void() dog_leap1        =[      $leap1,         dog_leap2       ] {ai_face();};
+void() dog_leap1        =[      $leap1,         dog_leap2       ] {
+if(random()<0.7&&self.racename=="Borg"&&self.enemy.alive)
+        enforcer_fire();
+ai_face();};
 void() dog_leap2	=[	$leap2,		dog_leap3	]
 {
         ai_face();
@@ -250,7 +253,9 @@ void() dog_die =
 // check for gib
 	if (self.health < -35)
 	{
-        self.enemy.exp = self.enemy.exp + (8 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (8 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (8 - self.health)*skill;
         self.netname = "progs/h_dog.mdl";
         CorpseDie();
         return;
@@ -324,21 +329,26 @@ float() CheckDogJump =
 */
 void() monster_dog =
 {
-	if (deathmatch)
+    if(self.classname!="Borg")
+    {
+        if (deathmatch&&self.nospells==0)
 	{
 		remove(self);
 		return;
 	}
-
+        self.classname ="rottweiler";
+	if(skill==3)
+		self.health = 50;
+	else	self.health = 25;
+	self.mass = 0.25;
+    }        
 	self.solid = SOLID_SLIDEBOX;
 	self.movetype = MOVETYPE_STEP;
 
 	setmodel (self, "progs/dog.mdl");
 
 	setsize (self, '-32 -32 -24', '32 32 40');
-	self.health = 25;
         self.alive = TRUE;
-        self.classname ="rottweiler";
         self.initthink = monster_dog;
 
 	self.th_stand = dog_stand1;
@@ -351,4 +361,19 @@ void() monster_dog =
         self.active = 1;
 
 	walkmonster_start();
+};
+
+void() monster_borgdog =
+{
+        self.skin=3;
+ 	if(skill==3)
+		self.health = 200;
+	else	self.health = 100;
+	self.mass = 0.5;
+        self.classname ="Borg";
+        self.racename="Borg";
+        self.classlabel="dog";
+        self.phase = rint((random() * 4) + 1);
+//        self.classlabel="Drone";
+        monster_dog();
 };

@@ -90,7 +90,8 @@ void()	knight_run8	=[	$runb8,		knight_run1	] {ai_run(6);};
 void()	knight_runatk1	=[	$runattack1,		knight_runatk2	]
 {
 if (random() > 0.5)
-	sound (self, CHAN_WEAPON, "knight/sword2.wav", 1, ATTN_NORM);
+//        sound (self, CHAN_WEAPON, "knight/sword2.wav", 1, ATTN_NORM);
+        sound (self, CHAN_WEAPON, "hknight/slash1.wav", 1, ATTN_NORM);
 else
 	sound (self, CHAN_WEAPON, "knight/sword1.wav", 1, ATTN_NORM);
 ai_charge(20);
@@ -215,7 +216,9 @@ void() knight_die =
 // check for gib
 	if (self.health < -40)
 	{
-        self.enemy.exp = self.enemy.exp + (25 - self.health)*skill;
+        if(self.enemy.dishonor)
+                self.enemy.exp = self.enemy.exp - (25 - self.health)*skill;
+        else self.enemy.exp = self.enemy.exp + (25 - self.health)*skill;
         self.netname = "progs/h_knight.mdl";
         CorpseDie();
         return;
@@ -239,13 +242,26 @@ void() monster_knight =
 		remove(self);
 		return;
 	}
+        if(!self.charmed)
+        {
+	precache_model ("progs/knight.mdl");
+	precache_model ("progs/h_knight.mdl");
+
+	precache_sound ("knight/kdeath.wav");
+	precache_sound ("knight/khurt.wav");
+	precache_sound ("knight/ksight.wav");
+        precache_sound ("knight/idle.wav");
+        }
 	self.solid = SOLID_SLIDEBOX;
 	self.movetype = MOVETYPE_STEP;
 
 	setmodel (self, "progs/knight.mdl");
 
 	setsize (self, '-16 -16 -24', '16 16 40');
-	self.health = 75;
+	if(skill==3)
+		self.health = 150;
+	else	self.health = 75;
+	self.mass = 1.5;
         self.alive = TRUE;
         self.classname ="knight";
         self.initthink = monster_knight;
