@@ -833,7 +833,17 @@ if(deathmatch||teamplay)
 void() selectrace=
 {
 local string printnum;
-if (self.impulse == 140 || self.impulse == 142)
+if (!self.ishuman){	// leilei - selecting hack for bots
+		if (!self.raceset && !self.race){
+			self.race = random() & 10;
+			self.race = self.owner.botrace - 1;
+                //	showplayskin();
+			self.impulse = 142;
+			}
+		else if (!self.raceset)
+			self.impulse = 52;
+		}
+if (self.impulse == 140 || self.impulse == 142 || !self.ishuman)
 {
         if(self.race==0)
                 showplayskin();
@@ -863,20 +873,34 @@ else if(self.race==9)
 else if(self.race==10)
         centerprint(self,"Borg\n");
 }
-else if(self.impulse==52&&self.race!=0)
+if((self.impulse==52&&self.race!=0) || !self.ishuman)
 {
 	sound (self, CHAN_VOICE,"misc/secret.wav", 1, ATTN_NORM);
 	self.raceset=TRUE;
 	showrace();
 }
+
+
+
 };
 
 void() selectclass=
 {
 local string printnum;
-if (self.impulse == 140 || self.impulse == 142)
+if (self.impulse == 140 || self.impulse == 142 || !self.ishuman)
 {
 self.class = self.class - self.impulse + 141;
+
+if (!self.ishuman){	// leilei - selecting hack for bots
+		if (!self.classset && !self.class){
+			self.class = random() & 8;
+			//self.class = self.owner.botclass;
+                	showplayskin();
+			self.impulse = 140;
+			}
+		else if (!self.classset)
+			self.impulse = 52;
+		}
 if(self.class>8)
         self.class=1;
 else if(self.class<1)
@@ -921,19 +945,30 @@ else if(self.class==7)
 else if(self.class==8)
         centerprint(self,"Dark Jedi\n");
 }
-else if(self.impulse==52&&self.class!=0)
+if((self.impulse==52&&self.class!=0) || !self.ishuman)
 {
 sound (self, CHAN_VOICE,"misc/secret.wav", 1, ATTN_NORM);
 showclass();
 self.classset=TRUE;
 }
+
+
 };
 
 void() selectskin=
 {
 local string printnum;
 local float ok;
-if (self.impulse == 140 || self.impulse == 142)
+if (!self.ishuman){	// leilei - selecting hack for bots
+		if (!self.skinset){
+			self.skin = random() & 20;
+			self.skin = self.botskin - 1;
+			self.impulse = 142;
+			}
+		else if (!self.skinset)
+			self.impulse = 52;
+		}
+		if (self.impulse == 140 || self.impulse == 142 || !self.ishuman)
 {
                 self.skin = self.skin - (self.impulse - 141);
                 while(ok==FALSE)
@@ -972,12 +1007,14 @@ if (self.impulse == 140 || self.impulse == 142)
                 self.saber.skin=self.skin;
                 showskin2();
 }
-else if(self.impulse==52)
+if(self.impulse==52 || !self.ishuman)
 {
 sound (self, CHAN_VOICE,"misc/secret.wav", 1, ATTN_NORM);
 self.skinset=TRUE;
 showskin();
 }
+
+
 };
 
 //Predator Cloak Malfunctions

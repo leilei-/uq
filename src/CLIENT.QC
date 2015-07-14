@@ -691,6 +691,7 @@ void() PutClientInServer =
 
 	player_stand1 ();
         self.impulse =45;
+	
 
 	if (deathmatch || coop)
 	{
@@ -1252,6 +1253,8 @@ void() PlayerPreThink =
 {
 	local	float	mspeed, aspeed;
 	local	float	r;
+	if (BotPreFrame()) // FrikBot
+	return;
 
 	if (intermission_running)
 	{
@@ -1849,6 +1852,8 @@ void() PlayerPostThink =
 {
 	local	float	mspeed, aspeed;
 	local	float	r;
+	if (BotPostFrame()) // FrikBot
+		return;
 
 	if (self.view_ofs == '0 0 0')
 		return;		// intermission or finale
@@ -1972,6 +1977,7 @@ void() ClientConnect =
 {
 //        sprint(self,"Welcome to Ultimate Quake, version 1.032\n");
 //        sprint(self,"Choose your Race and Class...\n");
+	ClientInRankings(); // FrikBot
 
 	bprint (self.netname);
 	bprint (" entered the game\n");
@@ -1991,6 +1997,7 @@ called when a player disconnects from a server
 */
 void() ClientDisconnect =
 {
+	ClientDisconnected(); // FrikBot
 	if (gameover)
 		return;
 	// if the level end trigger has been activated, just return
